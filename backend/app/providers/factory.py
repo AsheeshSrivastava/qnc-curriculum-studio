@@ -77,30 +77,44 @@ async def get_chat_model(
     *,
     secret_store: SecretStore,
     secret_token: Optional[str],
+    model: Optional[str] = None,
+    temperature: Optional[float] = None,
 ):
-    """Instantiate a LangChain chat model for the provider."""
+    """Instantiate a LangChain chat model for the provider.
+    
+    Args:
+        provider: The LLM provider to use
+        secret_store: Store for API credentials
+        secret_token: Optional token for user-supplied credentials
+        model: Optional model override (defaults to provider_settings.model)
+        temperature: Optional temperature override (defaults to provider_settings.temperature)
+    """
 
     provider_settings = resolve_settings(provider)
     credentials = await resolve_credentials(provider, secret_store=secret_store, secret_token=secret_token)
 
+    # Use overrides if provided, otherwise use provider settings
+    final_model = model or provider_settings.model
+    final_temperature = temperature if temperature is not None else provider_settings.temperature
+
     if provider == "openai":
         return ChatOpenAI(
-            model=provider_settings.model,
+            model=final_model,
             api_key=credentials.api_key,
-            temperature=provider_settings.temperature,
+            temperature=final_temperature,
         )
     if provider == "gemini":
         return GeminiChatModel(
-            model=provider_settings.model,
+            model=final_model,
             api_key=credentials.api_key,
-            temperature=provider_settings.temperature,
+            temperature=final_temperature,
         )
     if provider == "openrouter":
         return ChatOpenAI(
-            model=provider_settings.model,
+            model=final_model,
             api_key=credentials.api_key,
             base_url=provider_settings.base_url,
-            temperature=provider_settings.temperature,
+            temperature=final_temperature,
         )
 
     raise ProviderConfigurationError(f"Unsupported provider '{provider}'.")
