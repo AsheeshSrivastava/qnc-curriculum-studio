@@ -66,20 +66,32 @@ def render_sidebar():
         
         # Model Selection
         st.markdown("#### 🤖 Model Selection")
+        
+        # Organized model options with categories
         model_options = {
+            # GPT-5 Series (Latest)
+            "gpt-5": "🌟 GPT-5 (Latest Flagship)",
+            "gpt-5-mini": "GPT-5 Mini (Fast & Efficient)",
+            "gpt-5-nano": "GPT-5 Nano (Lightweight)",
+            "gpt-5-codex": "GPT-5 Codex (Coding Specialist)",
+            # O3 Series
+            "o3-deep-research": "🔬 O3 Deep Research (Advanced)",
+            # GPT-4 Series
+            "gpt-4o": "GPT-4o (Balanced)",
             "gpt-4o-mini": "GPT-4o Mini (Fast & Cheap)",
-            "gpt-4o": "GPT-4o (Balanced) ⭐",
             "gpt-4-turbo": "GPT-4 Turbo (Advanced)",
+            # O1 Series
             "o1-preview": "O1 Preview (Reasoning)",
+            "o1-mini": "O1 Mini (Fast Reasoning)",
         }
         
         selected_model = st.selectbox(
             "Choose Model",
             options=list(model_options.keys()),
-            index=1,  # Default to gpt-4o
+            index=0,  # Default to gpt-5
             format_func=lambda x: model_options[x],
             key="selected_model",
-            help="Select the AI model for generation. GPT-4o is recommended for balanced performance."
+            help="🌟 GPT-5 series recommended for best performance. O3 for deep research. GPT-4 for legacy compatibility."
         )
         
         # Show quality toggle

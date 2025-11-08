@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     google_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    openai_chat_model: str = "gpt-4o"
+    openai_chat_model: str = "gpt-5"
     gemini_chat_model: str = "models/gemini-1.5-flash-latest"
     openrouter_chat_model: str = "anthropic/claude-3-haiku:beta"
     langsmith_project: Optional[str] = None
@@ -265,7 +265,22 @@ class Settings(BaseSettings):
     
     # Model Selection (configurable)
     available_models: list[str] = Field(
-        default_factory=lambda: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "o1-preview"],
+        default_factory=lambda: [
+            # GPT-4 Series (Legacy)
+            "gpt-4o-mini",
+            "gpt-4o",
+            "gpt-4-turbo",
+            # O1 Series (Reasoning)
+            "o1-preview",
+            "o1-mini",
+            # GPT-5 Series (Latest)
+            "gpt-5",
+            "gpt-5-mini",
+            "gpt-5-nano",
+            "gpt-5-codex",
+            # O3 Series (Deep Research)
+            "o3-deep-research",
+        ],
         description="Available models for user selection in frontend.",
     )
     
