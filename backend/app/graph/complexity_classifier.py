@@ -49,7 +49,7 @@ class ComplexityClassifier:
     def __init__(self) -> None:
         settings = get_settings()
         self.model = ChatOpenAI(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             api_key=settings.openai_api_key,
             temperature=0.0,  # Deterministic classification
             max_tokens=10,    # Only need one word

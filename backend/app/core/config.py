@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     google_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    openai_chat_model: str = "gpt-4o-mini"
+    openai_chat_model: str = "gpt-4o"
     gemini_chat_model: str = "models/gemini-1.5-flash-latest"
     openrouter_chat_model: str = "anthropic/claude-3-haiku:beta"
     langsmith_project: Optional[str] = None
