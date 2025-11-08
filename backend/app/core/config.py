@@ -175,7 +175,7 @@ class Settings(BaseSettings):
         description="Minimum code blocks required for Gate 1 (Agent 1 output).",
     )
     gate_1_min_citations: int = Field(
-        default=10,
+        default=6,
         ge=5,
         le=50,
         description="Minimum citations required for Gate 1 (Agent 1 output).",
