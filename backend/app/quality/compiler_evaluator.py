@@ -128,26 +128,13 @@ class CompilerQualityEvaluator:
         technical: str,
     ) -> float:
         """
-        Check if technical facts and citations are preserved.
+        Check if technical facts (code blocks, technical terms) are preserved.
+        
+        NOTE: Citations are handled separately and should NOT appear in compiled text.
         
         Returns: 0-30 points
         """
         score = 30.0
-        
-        # Check citation preservation
-        import re
-        tech_citations = set(re.findall(r'\[(doc|web)-\d+\]', technical))
-        compiled_citations = set(re.findall(r'\[(doc|web)-\d+\]', compiled))
-        
-        missing_citations = tech_citations - compiled_citations
-        if missing_citations:
-            deduction = min(10, len(missing_citations) * 2)
-            score -= deduction
-            self.logger.warning(
-                "compiler.eval.missing_citations",
-                missing=list(missing_citations),
-                deduction=deduction,
-            )
         
         # Check for code blocks preservation (must have at least some code blocks if technical had them)
         tech_code_blocks = technical.count("```")
@@ -163,6 +150,7 @@ class CompilerQualityEvaluator:
                               tech=tech_code_blocks, compiled=compiled_code_blocks)
         
         # Check for key technical terms (more lenient - just check if they appear anywhere)
+        import re
         tech_terms = set(re.findall(r'`([^`]+)`', technical))
         if tech_terms:
             # Check if term appears anywhere in compiled (with or without backticks)

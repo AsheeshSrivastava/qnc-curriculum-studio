@@ -18,218 +18,65 @@ def _extract_citation_ids(text: str) -> set[str]:
     return set(re.findall(r'\[(doc|web)-\d+\]', text))
 
 
-def _inject_missing_citations(
-    compiled: str,
-    technical_answer: str,
-    missing_citations: list[str],
-) -> str:
+def _strip_citation_tags(text: str) -> str:
     """
-    Inject missing citations back into compiled content.
+    Remove all citation tags ([doc-X], [web-X]) from text.
     
-    Strategy:
-    1. Find where each citation appeared in the technical answer
-    2. Extract the sentence/context around it
-    3. Find similar sentence in compiled content
-    4. Inject citation at the end of that sentence
+    Citations are returned separately in the citations array,
+    so they should NOT appear in the final answer text.
     
     Args:
-        compiled: The compiled content (missing citations)
-        technical_answer: The original technical answer (has all citations)
-        missing_citations: List of citation IDs to inject (e.g., ['doc-1', 'web-5'])
+        text: Text with citation tags
         
     Returns:
-        Compiled content with missing citations injected
+        Text with citation tags removed
     """
-    if not missing_citations:
-        return compiled
-    
-    logger.info(
-        "citation_injection.start",
-        missing_count=len(missing_citations),
-        missing=missing_citations,
-    )
-    
-    # Split technical answer into sentences
-    tech_sentences = re.split(r'(?<=[.!?])\s+', technical_answer)
-    
-    for citation_id in missing_citations:
-        citation_tag = f"[{citation_id}]"
-        
-        # Find the sentence in technical answer that contains this citation
-        source_sentence = None
-        for sentence in tech_sentences:
-            if citation_tag in sentence:
-                # Remove the citation tag to get the core content
-                source_sentence = sentence.replace(citation_tag, '').strip()
-                break
-        
-        if not source_sentence:
-            logger.warning(
-                "citation_injection.no_source",
-                citation=citation_id,
-            )
-            continue
-        
-        # Extract key terms from the source sentence (for matching)
-        # Use words longer than 4 chars, excluding common words
-        key_terms = [
-            word.lower() for word in re.findall(r'\b\w{5,}\b', source_sentence)
-            if word.lower() not in {'which', 'where', 'there', 'these', 'those', 'their', 'about'}
-        ]
-        
-        if not key_terms:
-            logger.warning(
-                "citation_injection.no_key_terms",
-                citation=citation_id,
-                sentence=source_sentence[:100],
-            )
-            continue
-        
-        # Find the best matching sentence in compiled content
-        compiled_sentences = re.split(r'(?<=[.!?])\s+', compiled)
-        best_match_idx = -1
-        best_match_score = 0
-        
-        for idx, comp_sentence in enumerate(compiled_sentences):
-            comp_lower = comp_sentence.lower()
-            # Count how many key terms appear in this sentence
-            match_score = sum(1 for term in key_terms if term in comp_lower)
-            if match_score > best_match_score:
-                best_match_score = match_score
-                best_match_idx = idx
-        
-        # If we found a good match (at least 1 key term), inject citation
-        if best_match_idx >= 0 and best_match_score > 0:
-            target_sentence = compiled_sentences[best_match_idx]
-            
-            # Don't inject if citation already exists in this sentence
-            if citation_tag not in target_sentence:
-                # Inject citation at the end of the sentence (before period/punctuation)
-                if target_sentence.endswith('.'):
-                    injected_sentence = target_sentence[:-1] + f" {citation_tag}."
-                elif target_sentence.endswith('!') or target_sentence.endswith('?'):
-                    injected_sentence = target_sentence[:-1] + f" {citation_tag}" + target_sentence[-1]
-                else:
-                    injected_sentence = target_sentence + f" {citation_tag}"
-                
-                compiled_sentences[best_match_idx] = injected_sentence
-                
-                logger.info(
-                    "citation_injection.success",
-                    citation=citation_id,
-                    match_score=best_match_score,
-                    key_terms=key_terms[:3],
-                )
-            else:
-                logger.info(
-                    "citation_injection.already_exists",
-                    citation=citation_id,
-                )
-        else:
-            logger.warning(
-                "citation_injection.no_match",
-                citation=citation_id,
-                key_terms=key_terms[:3],
-            )
-    
-    # Rejoin sentences
-    injected_compiled = ' '.join(compiled_sentences)
-    
-    # Verify injection success
-    final_citations = _extract_citation_ids(injected_compiled)
-    injected_count = len([c for c in missing_citations if f"[{c}]" in injected_compiled])
-    
-    logger.info(
-        "citation_injection.complete",
-        attempted=len(missing_citations),
-        injected=injected_count,
-        success_rate=f"{injected_count/len(missing_citations)*100:.1f}%",
-    )
-    
-    return injected_compiled
+    # Remove all [doc-X] and [web-X] tags
+    cleaned = re.sub(r'\s*\[(doc|web)-\d+\]\s*', ' ', text)
+    # Clean up multiple spaces
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    # Clean up space before punctuation
+    cleaned = re.sub(r'\s+([.,!?;:])', r'\1', cleaned)
+    return cleaned.strip()
 
 COMPILER_PROMPT = """# ROLE & CONTEXT
-You are an Expert Technical Content Compiler specializing in educational restructuring.
+You are an Expert Technical Content Compiler for Educational Content.
 
-Your PRIMARY OBJECTIVE: Transform technical content into learner-friendly format while maintaining 100% factual accuracy.
+Your PRIMARY OBJECTIVE: Transform technical content into learner-friendly, structured format while maintaining 100% factual accuracy.
 
-Your CRITICAL CONSTRAINT: You MUST preserve EVERY citation, code block, and technical term EXACTLY as provided. Citation loss = automatic failure.
+**CRITICAL**: Do NOT include citation tags like [doc-1] or [web-5] in your output. Citations are handled separately by the system.
 
-# CITATION PRESERVATION PROTOCOL (NON-NEGOTIABLE)
-
-## Step 1: Citation Inventory
-Input contains these citations (YOU MUST USE ALL OF THEM):
-{citations}
-
-## Step 2: Citation Mapping Rules
-BEFORE you restructure, understand these ABSOLUTE RULES:
-
-1. **One-to-One Preservation**: Every [doc-X] and [web-X] from input → MUST appear in output
-   - Input has [doc-1]? → Output MUST have [doc-1]
-   - Input has [web-5]? → Output MUST have [web-5]
-   - NO EXCEPTIONS
-
-2. **Attachment Fidelity**: Keep citations with their ORIGINAL facts
-   - If input says "Python uses duck typing [doc-3]" 
-   - Output must keep [doc-3] with duck typing explanation
-   - Don't move citations to different facts
-
-3. **No Consolidation**: NEVER merge multiple citations
-   - Input: "Lists are mutable [doc-1] and ordered [doc-2]"
-   - Output: "Lists are mutable [doc-1] and ordered [doc-2]" ✅
-   - NOT: "Lists are mutable and ordered [doc-1][doc-2]" ❌
-
-4. **Sentence Splitting**: If you split a sentence, attach citation to the MOST RELEVANT part
-   - Input: "List comprehensions are faster and more readable [web-4]"
-   - If split into 2 sentences, attach [web-4] to the sentence about speed OR readability (whichever is primary)
-
-5. **Paragraph Restructuring**: When moving content, MOVE THE CITATIONS WITH IT
-   - Don't leave citations orphaned in old locations
-   - Citations travel with their facts
-
-## Step 3: Verification Checkpoint
-BEFORE submitting, COUNT:
-- Input citations: {citation_count}
-- Output citations: [YOU MUST COUNT THESE]
-- THEY MUST MATCH EXACTLY
-
-If they don't match, you FAILED. Go back and find the missing citations.
-
-=== CRITICAL: CODE PRESERVATION ===
-- Every ```python code block MUST be preserved EXACTLY as written
-- Every technical term in backticks (`term`) MUST be preserved
-- NEVER simplify or remove code examples
-
-=== STRUCTURE: SUBTLE PSW (Problem-System-Win) ===
+# STRUCTURE REQUIREMENTS
 
 Your output MUST follow this EXACT structure:
 
-**PART 1: PROBLEM FRAMING (2-3 paragraphs)**
-Start naturally by framing the challenge or question. Use words like:
+## PART 1: PROBLEM FRAMING (2-3 paragraphs)
+Start by framing the challenge or question naturally:
 - "When working with..."
 - "In real projects, developers face..."
 - "Consider the challenge of..."
 - "Why does [concept] matter?"
 
-Include 1 "Consider..." prompt here.
+Include 1 "Consider..." reflection prompt here.
 
-**PART 2: CORE EXPLANATION (Main body, 4-6 paragraphs)**
+## PART 2: CORE EXPLANATION (Main body, 4-6 paragraphs)
 Explain how it works technically. MUST include:
-- ALL code blocks from technical answer (preserved exactly)
+- ALL code blocks from source material (preserved exactly)
 - ALL technical terms in backticks
-- ALL citations attached to facts
-- 2-3 "Consider..." prompts embedded naturally
+- 2-3 "Consider..." reflection prompts embedded naturally
 - Production-ready examples (not toy code)
+- Progressive complexity (simple → advanced)
 
-**PART 3: IMPACT & BENEFITS (1-2 paragraphs)**
-Explain what this enables in practice. Highlight the "small fix, big clarity" moment.
+## PART 3: IMPACT & BENEFITS (1-2 paragraphs)
+Explain what this enables in practice:
 - How does it improve workflows?
 - What does it unlock?
 - Connect to bigger picture
+- Highlight the "small fix, big clarity" moment
 
 Include 1 "Consider..." prompt here.
 
-**PART 4: REAL-WORLD EXAMPLES SECTION (REQUIRED)**
+## PART 4: REAL-WORLD EXAMPLES (REQUIRED)
 You MUST include this EXACT heading:
 
 ### Real-World Examples
@@ -245,7 +92,7 @@ Then provide 3 concrete examples:
 **3. Advanced Application**
 [Describe advanced use with trade-offs - 2-3 sentences]
 
-**PART 5: REFLECTION SECTION (REQUIRED)**
+## PART 5: REFLECTION (REQUIRED)
 You MUST include this EXACT heading:
 
 ### Reflection
@@ -253,26 +100,34 @@ You MUST include this EXACT heading:
 Then ask ONE focused question about the micro-fix that creates macro clarity:
 "What small change in [concept] creates the biggest impact in [real application]?"
 
-=== CHECKLIST BEFORE SUBMITTING ===
-□ All citations from input appear in output
-□ All code blocks preserved exactly
-□ All technical terms in backticks preserved
+# TECHNICAL PRESERVATION
+
+FROM THE TECHNICAL ANSWER BELOW:
+- Preserve EVERY code block exactly as written
+- Preserve EVERY technical term (use backticks)
+- Do NOT change technical facts or accuracy
+- Do NOT simplify code examples
+
+# CHECKLIST BEFORE SUBMITTING
+
+□ Problem framing paragraph (starts with challenge/question)
+□ Core explanation with ALL code blocks
+□ ALL technical terms in backticks
 □ 4-5 "Consider..." prompts throughout
+□ Impact paragraph ("small fix, big clarity")
 □ "### Real-World Examples" section with 3 examples
 □ "### Reflection" section with 1 question
-□ PSW structure (problem → explanation → impact)
-□ No fictional characters or creative storytelling
+□ PSW flow (problem → explanation → impact)
 □ Professional, mentor-like tone
+□ NO citation tags ([doc-X], [web-X]) in output
 
-=== INPUT ===
+# INPUT
 
 Technical Answer:
 {technical_answer}
 
-Citations (CHECK EACH ONE):
-{citations}
+# YOUR OUTPUT
 
-=== YOUR OUTPUT (MUST FOLLOW STRUCTURE ABOVE) ===
 """
 
 RECOMPILE_PROMPT = """# RECOMPILATION TASK
@@ -283,38 +138,37 @@ You are recompiling technical content that FAILED quality evaluation. This is yo
 ## Why You Failed
 {feedback}
 
-## Critical Constraints (Same as Before)
-1. **Citation Preservation**: ALL {citation_count} citations MUST appear in output
+## Critical Requirements
+1. **NO Citation Tags**: Do NOT include [doc-X] or [web-X] in output
 2. **Code Preservation**: ALL code blocks MUST be preserved exactly
 3. **Technical Accuracy**: NO facts can be changed or removed
+4. **Required Structure**: MUST include all sections (Problem Framing, Real-World Examples, Reflection)
 
 ## Your Source Materials
 
 ### Original Technical Answer (YOUR SOURCE OF TRUTH):
 {technical_answer}
 
-### Citations (COUNT THEM - Must be {citation_count} in your output):
-{citations}
-
-=== YOUR PREVIOUS ATTEMPT (FAILED) ===
+### Your Previous Attempt (FAILED):
 {previous_compilation}
 
-=== WHAT YOU MUST FIX ===
-Address EVERY feedback point above. Common issues:
-1. Missing citations → GO BACK and copy them from technical answer
-2. Missing "### Real-World Examples" → ADD IT with 3 examples
-3. Missing "### Reflection" → ADD IT with 1 question
-4. Missing "Consider..." prompts → ADD 4-5 throughout
-5. Missing code blocks → COPY them exactly from technical answer
-6. No problem framing → START with "When working with..." or "Consider the challenge of..."
-7. No impact section → END with "This enables..." or "This unlocks..."
+## What You MUST Fix
 
-=== REQUIRED STRUCTURE (COPY THIS) ===
+Address EVERY feedback point above. Common issues:
+1. **Missing Problem Framing** → START with "When working with..." or "Consider the challenge of..."
+2. **Missing "### Real-World Examples"** → ADD IT with 3 examples
+3. **Missing "### Reflection"** → ADD IT with 1 question
+4. **Missing "Consider..." prompts** → ADD 4-5 throughout
+5. **Missing code blocks** → COPY them exactly from technical answer
+6. **Missing Impact section** → END with "This enables..." or "This unlocks..."
+7. **Citation tags in output** → REMOVE ALL [doc-X] and [web-X] tags
+
+## Required Structure (COPY THIS)
 
 [Problem framing paragraph - start with challenge/question]
 Consider... [reflection prompt]
 
-[Core explanation with ALL code blocks, ALL citations, ALL technical terms]
+[Core explanation with ALL code blocks, ALL technical terms]
 Consider... [reflection prompt]
 Consider... [reflection prompt]
 
@@ -336,8 +190,8 @@ Consider... [reflection prompt]
 
 [One focused question: "What small change in X creates the biggest impact in Y?"]
 
-=== CHECKLIST (ALL MUST BE TRUE) ===
-□ Every citation from technical answer is in my output
+## Checklist (ALL MUST BE TRUE)
+
 □ Every code block is preserved exactly
 □ "### Real-World Examples" heading exists
 □ 3 examples under Real-World Examples
@@ -345,8 +199,10 @@ Consider... [reflection prompt]
 □ 1 reflection question under Reflection
 □ 4-5 "Consider..." prompts throughout
 □ Problem → Explanation → Impact flow
+□ NO citation tags ([doc-X], [web-X]) in output
 
-=== YOUR RECOMPILED OUTPUT ===
+## YOUR RECOMPILED OUTPUT
+
 """
 
 
@@ -387,18 +243,10 @@ class TechnicalCompiler:
             Compiled content with PSW structure
         """
         try:
-            # Format citations for prompt
-            citations_str = "\n".join(
-                [f"[{c.get('id', '')}] {c.get('source', 'N/A')}" for c in citations]
-            )
-            citation_count = len(citations)
-            
             if feedback and previous_compilation:
                 # Recompile with feedback
                 prompt = RECOMPILE_PROMPT.format(
                     technical_answer=technical_answer,
-                    citations=citations_str,
-                    citation_count=citation_count,
                     previous_compilation=previous_compilation,
                     feedback="\n".join(feedback),
                 )
@@ -406,64 +254,22 @@ class TechnicalCompiler:
                 # Initial compilation
                 prompt = COMPILER_PROMPT.format(
                     technical_answer=technical_answer,
-                    citations=citations_str,
-                    citation_count=citation_count,
                 )
             
             response = await self.model.ainvoke(prompt)
             compiled = response.content.strip()
             
-            # Verify citations were preserved
-            citation_ids = [c.get("id", "") for c in citations]
-            missing_citations = [
-                cid for cid in citation_ids if cid and f"[{cid}]" not in compiled
-            ]
-            
-            if missing_citations:
-                self.logger.warning(
-                    "compiler.missing_citations",
-                    missing=missing_citations,
-                )
-                
-                # CITATION PRESERVATION LAYER: Inject missing citations back
-                self.logger.info(
-                    "compiler.citation_injection.starting",
-                    missing_count=len(missing_citations),
-                )
-                compiled = _inject_missing_citations(
-                    compiled=compiled,
-                    technical_answer=technical_answer,
-                    missing_citations=missing_citations,
-                )
-                
-                # Re-verify after injection
-                still_missing = [
-                    cid for cid in citation_ids if cid and f"[{cid}]" not in compiled
-                ]
-                if still_missing:
-                    self.logger.error(
-                        "compiler.citation_injection.failed",
-                        still_missing=still_missing,
-                    )
-                else:
-                    self.logger.info(
-                        "compiler.citation_injection.success",
-                        recovered=len(missing_citations),
-                    )
-            
-            final_citations_preserved = len([
-                cid for cid in citation_ids if cid and f"[{cid}]" in compiled
-            ])
+            # IMPORTANT: Strip all citation tags from final output
+            # Citations are returned separately in the citations array
+            compiled_clean = _strip_citation_tags(compiled)
             
             self.logger.info(
                 "compiler.complete",
-                compiled_length=len(compiled),
-                citations_preserved=final_citations_preserved,
-                citations_total=len(citation_ids),
-                preservation_rate=f"{final_citations_preserved/max(1, len(citation_ids))*100:.1f}%",
+                compiled_length=len(compiled_clean),
+                had_citation_tags=('[doc-' in compiled or '[web-' in compiled),
             )
             
-            return compiled
+            return compiled_clean
             
         except Exception as e:
             self.logger.error(
@@ -471,6 +277,6 @@ class TechnicalCompiler:
                 error=str(e),
                 exc_info=True,
             )
-            # Return original technical answer on error
-            return technical_answer
+            # Return original technical answer on error (with citations stripped)
+            return _strip_citation_tags(technical_answer)
 
