@@ -139,7 +139,7 @@ class APIClient:
             response = self.session.post(
                 f"{self.base_url}/api/chat/quick-qa",
                 json=payload,
-                timeout=60,  # 1 minute for quick responses
+                timeout=300,  # 5 minutes for complex questions
             )
             response.raise_for_status()
             return response.json()
