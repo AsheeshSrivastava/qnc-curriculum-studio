@@ -33,10 +33,12 @@ def _strip_citation_tags(text: str) -> str:
     """
     # Remove all [doc-X] and [web-X] tags
     cleaned = re.sub(r'\s*\[(doc|web)-\d+\]\s*', ' ', text)
-    # Clean up multiple spaces
-    cleaned = re.sub(r'\s+', ' ', cleaned)
+    # Clean up multiple spaces on the same line (but preserve newlines!)
+    cleaned = re.sub(r'[^\S\n]+', ' ', cleaned)  # Replace non-newline whitespace with single space
     # Clean up space before punctuation
-    cleaned = re.sub(r'\s+([.,!?;:])', r'\1', cleaned)
+    cleaned = re.sub(r' +([.,!?;:])', r'\1', cleaned)
+    # Clean up excessive blank lines (more than 2 newlines)
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
     return cleaned.strip()
 
 COMPILER_PROMPT = """# ROLE & CONTEXT
