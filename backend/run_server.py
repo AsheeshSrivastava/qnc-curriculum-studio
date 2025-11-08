@@ -1,6 +1,7 @@
 """Custom uvicorn runner with Windows event loop fix."""
 
 import asyncio
+import os
 import sys
 
 # CRITICAL: Set Windows event loop policy BEFORE uvicorn imports anything
@@ -11,10 +12,14 @@ if sys.platform == "win32":
 if __name__ == "__main__":
     import uvicorn
 
+    # Use environment variables for host and port (for Render deployment)
+    host = os.getenv("API_HOST", "127.0.0.1")
+    port = int(os.getenv("API_PORT", "8000"))
+
     uvicorn.run(
         "app.main:app",
-        host="127.0.0.1",
-        port=8000,
+        host=host,
+        port=port,
         reload=False,  # Disable reload to avoid event loop issues
         log_level="info",
     )
