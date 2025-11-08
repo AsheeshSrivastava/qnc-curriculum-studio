@@ -170,8 +170,34 @@ async def chat_query(
             question=request.question,
             history=[turn.model_dump() for turn in request.history],
         )
+        
+        response = _format_response(result)
+        
+        # Store Q&A pair if high quality (async, don't block response)
+        try:
+            from app.services.qa_storage import store_qa_if_high_quality
+            
+            quality_score = response.evaluation.total_score
+            if quality_score >= 85.0:  # Only attempt storage for high-quality answers
+                # Fire and forget - don't await
+                import asyncio
+                asyncio.create_task(
+                    store_qa_if_high_quality(
+                        session=session,
+                        question=request.question,
+                        answer=response.answer,
+                        quality_score=quality_score,
+                        mode="generate",
+                        citations=[c.model_dump() for c in response.citations],
+                    )
+                )
+                logger.debug("qa_storage.task_created", score=quality_score)
+        except Exception as storage_error:
+            # Don't fail the request if storage fails
+            logger.warning("qa_storage.task_failed", error=str(storage_error))
+        
         return Response(
-            content=_format_response(result).model_dump_json(),
+            content=response.model_dump_json(),
             media_type="application/json",
         )
     except Exception as e:
