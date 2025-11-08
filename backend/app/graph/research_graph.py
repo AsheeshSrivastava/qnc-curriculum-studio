@@ -528,7 +528,7 @@ class ResearchGraph:
         # Determine retrieval depth based on research mode
         depth_config = {
             "quick": {"rag_limit": 10, "tavily_results": 5},
-            "standard": {"rag_limit": 15, "tavily_results": 8},
+            "standard": {"rag_limit": 15, "tavily_results": 5},  # Reduced from 8 to 5 for cost optimization
             "deep": {"rag_limit": 20, "tavily_results": 10},
         }
         config = depth_config.get(self.research_mode, depth_config["standard"])
