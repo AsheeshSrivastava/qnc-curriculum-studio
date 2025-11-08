@@ -801,6 +801,10 @@ class ResearchGraph:
             metrics=gate_result.metrics,
         )
         
+        # Increment retry counter for next attempt (if gate fails)
+        current_retry = state.get("synthesis_retry_count", 0)
+        next_retry = current_retry + 1 if not gate_result.passed else current_retry
+        
         return {
             **state,
             "synthesis_output": synthesis,
@@ -810,6 +814,7 @@ class ResearchGraph:
                 "message": gate_result.message,
                 "metrics": gate_result.metrics,
             },
+            "synthesis_retry_count": next_retry,
         }
     
     def _gate_1_decision(self, state: GraphState) -> str:
@@ -866,6 +871,10 @@ class ResearchGraph:
             metrics=gate_result.metrics,
         )
         
+        # Increment retry counter for next attempt (if gate fails)
+        current_retry = state.get("structure_retry_count", 0)
+        next_retry = current_retry + 1 if not gate_result.passed else current_retry
+        
         return {
             **state,
             "structured_output": structured,
@@ -874,6 +883,7 @@ class ResearchGraph:
                 "message": gate_result.message,
                 "metrics": gate_result.metrics,
             },
+            "structure_retry_count": next_retry,
         }
     
     def _gate_2_decision(self, state: GraphState) -> str:
