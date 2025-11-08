@@ -32,8 +32,16 @@ class GraphState(TypedDict, total=False):
     enrichment_aborted: bool  # Track if enrichment was aborted
     abort_reason: str | None  # Reason for abort
     
-    # Technical Compiler fields
+    # Sequential Pipeline fields (Agents 1-2)
+    synthesis_output: str | None  # Output from Agent 1: Research & Synthesis
+    structured_output: str | None  # Output from Agent 2: Structure Transformer
+    gate_1_result: dict[str, Any] | None  # Quality Gate 1 results
+    gate_2_result: dict[str, Any] | None  # Quality Gate 2 results
+    synthesis_retry_count: int  # Retry counter for Agent 1
+    structure_retry_count: int  # Retry counter for Agent 2
+    
+    # Technical Compiler fields (Agent 3)
     compiled_answer: str | None  # Output from Technical Compiler
-    compiler_evaluation: dict[str, Any] | None  # Quality Gate 2 results
+    compiler_evaluation: dict[str, Any] | None  # Quality Gate 3 results
     compiler_retry_count: int  # Retry counter for compiler
 

@@ -27,6 +27,9 @@ from app.graph.complexity_classifier import ComplexityClassifier
 from app.graph.scenario_architect import ScenarioArchitect
 from app.graph.cot_storyteller import CoTStoryteller
 from app.graph.technical_compiler import TechnicalCompiler
+from app.graph.research_synthesis_agent import ResearchSynthesisAgent
+from app.graph.structure_transformer_agent import StructureTransformerAgent
+from app.graph.quality_gates import QualityGates
 from app.quality.narrative_evaluator import NarrativeQualityEvaluator
 from app.quality.aethelgard_evaluator import AethelgardQualityEvaluator
 from app.quality.compiler_evaluator import CompilerQualityEvaluator
@@ -262,7 +265,13 @@ class ResearchGraph:
         
         self.quality_evaluator = QualityEvaluator()
         
-        # Technical Compiler components
+        # Sequential Pipeline components (Agents 1-2)
+        if self.settings.enable_sequential_pipeline:
+            self.synthesis_agent = ResearchSynthesisAgent()
+            self.structure_agent = StructureTransformerAgent()
+            self.quality_gates = QualityGates()
+        
+        # Technical Compiler components (Agent 3)
         if self.settings.enable_technical_compiler:
             self.technical_compiler = TechnicalCompiler()
             self.compiler_evaluator = CompilerQualityEvaluator()
@@ -297,8 +306,74 @@ class ResearchGraph:
         graph = StateGraph(GraphState)
         graph.add_node("research", self._parallel_research)
         
-        # Multi-agent pipeline or legacy enrichment
-        if self.settings.enable_multi_agent_pipeline and self.complexity_classifier:
+        # ========================================
+        # NEW: SEQUENTIAL PIPELINE (Agents 1-2-3)
+        # ========================================
+        if self.settings.enable_sequential_pipeline:
+            # Agent 1: Research & Synthesis
+            graph.add_node("agent_1_synthesize", self._agent_1_synthesize)
+            
+            # Agent 2: Structure Transformer
+            graph.add_node("agent_2_structure", self._agent_2_structure)
+            
+            # Agent 3: Technical Compiler (existing)
+            if self.technical_compiler:
+                graph.add_node("prepare_compiler", self._prepare_for_compiler)
+                graph.add_node("compile_technical", self._compile_technical)
+                graph.add_node("evaluate_compiler", self._evaluate_compiler)
+                graph.add_node("recompile", self._recompile)
+            
+            # Pipeline flow
+            graph.set_entry_point("research")
+            graph.add_edge("research", "agent_1_synthesize")
+            
+            # Quality Gate 1: Agent 1 output
+            graph.add_conditional_edges(
+                "agent_1_synthesize",
+                self._gate_1_decision,
+                {
+                    "agent_2": "agent_2_structure",
+                    "retry_agent_1": "agent_1_synthesize",
+                },
+            )
+            
+            # Quality Gate 2: Agent 2 output
+            if self.technical_compiler:
+                graph.add_conditional_edges(
+                    "agent_2_structure",
+                    self._gate_2_decision,
+                    {
+                        "compiler": "prepare_compiler",
+                        "retry_agent_2": "agent_2_structure",
+                    },
+                )
+                
+                # Compiler pipeline (Agent 3)
+                graph.add_edge("prepare_compiler", "compile_technical")
+                graph.add_edge("compile_technical", "evaluate_compiler")
+                
+                # Quality Gate 3: Compiler evaluation
+                graph.add_conditional_edges(
+                    "evaluate_compiler",
+                    self._compiler_decision,
+                    {"recompile": "recompile", "done": END},
+                )
+                graph.add_edge("recompile", "evaluate_compiler")
+            else:
+                # No compiler, end after Agent 2
+                graph.add_conditional_edges(
+                    "agent_2_structure",
+                    self._gate_2_decision,
+                    {
+                        "compiler": END,
+                        "retry_agent_2": "agent_2_structure",
+                    },
+                )
+        
+        # ========================================
+        # LEGACY: Multi-agent narrative pipeline
+        # ========================================
+        elif self.settings.enable_multi_agent_pipeline and self.complexity_classifier:
             # New 4-agent quality-first pipeline
             graph.add_node("classify_complexity", self._classify_complexity)
             graph.add_node("generate", self._generate_answer)
@@ -359,6 +434,9 @@ class ResearchGraph:
             )
             graph.add_edge("repolish", "evaluate_aethelgard")
             
+        # ========================================
+        # LEGACY: Simple quality-first pipeline
+        # ========================================
         else:
             # Quality-first pipeline with optional Technical Compiler
             graph.add_node("generate", self._generate_answer)
@@ -632,6 +710,183 @@ class ResearchGraph:
         next_state.pop("revision_feedback", None)
         next_state.pop("evaluation", None)
         return next_state
+    
+    # ========================================
+    # SEQUENTIAL PIPELINE METHODS (Agents 1-2)
+    # ========================================
+    
+    async def _agent_1_synthesize(self, state: GraphState) -> GraphState:
+        """
+        Agent 1: Research & Synthesis
+        
+        Takes RAG + Tavily sources and generates technical content.
+        """
+        if not self.settings.enable_sequential_pipeline:
+            # Fall back to old generation method
+            return await self._generate_answer(state)
+        
+        question = state["question"]
+        documents = state.get("documents", []) or []
+        web_results = state.get("web_results", []) or []
+        
+        # Format sources for synthesis
+        documents_context, doc_citations = self._format_documents(documents)
+        web_context, web_citations = self._format_web_results(web_results)
+        citations = doc_citations + web_citations
+        
+        sources_context = f"""
+=== RAG DOCUMENTS ({len(documents)}) ===
+
+{documents_context or 'None'}
+
+=== WEB RESULTS ({len(web_results)}) ===
+
+{web_context or 'None'}
+"""
+        
+        logger.info(
+            "agent_1.start",
+            question=question[:100],
+            rag_docs=len(documents),
+            web_results=len(web_results),
+        )
+        
+        # Run Agent 1
+        synthesis = await self.synthesis_agent.synthesize(
+            question=question,
+            sources_context=sources_context,
+        )
+        
+        # Run Quality Gate 1
+        gate_result = self.quality_gates.gate_1_technical(synthesis)
+        
+        logger.info(
+            "agent_1.complete",
+            passed=gate_result.passed,
+            metrics=gate_result.metrics,
+        )
+        
+        return {
+            **state,
+            "synthesis_output": synthesis,
+            "citations": citations,
+            "gate_1_result": {
+                "passed": gate_result.passed,
+                "message": gate_result.message,
+                "metrics": gate_result.metrics,
+            },
+        }
+    
+    def _gate_1_decision(self, state: GraphState) -> str:
+        """Decide whether to proceed to Agent 2 or retry Agent 1."""
+        gate_result = state.get("gate_1_result", {})
+        
+        if gate_result.get("passed"):
+            return "agent_2"
+        
+        retry_count = state.get("synthesis_retry_count", 0)
+        if retry_count >= 2:
+            logger.warning(
+                "agent_1.max_retries",
+                retry_count=retry_count,
+                message="Proceeding despite gate failure",
+            )
+            return "agent_2"
+        
+        logger.info(
+            "agent_1.retry",
+            retry_count=retry_count + 1,
+            reason=gate_result.get("message"),
+        )
+        return "retry_agent_1"
+    
+    async def _agent_2_structure(self, state: GraphState) -> GraphState:
+        """
+        Agent 2: Structure Transformer
+        
+        Takes technical synthesis and adds markdown structure.
+        """
+        synthesis = state.get("synthesis_output", "")
+        
+        if not synthesis:
+            logger.error("agent_2.no_input", message="No synthesis output from Agent 1")
+            return state
+        
+        logger.info(
+            "agent_2.start",
+            input_length=len(synthesis),
+        )
+        
+        # Run Agent 2
+        structured = await self.structure_agent.transform(
+            technical_content=synthesis,
+        )
+        
+        # Run Quality Gate 2
+        gate_result = self.quality_gates.gate_2_structure(structured)
+        
+        logger.info(
+            "agent_2.complete",
+            passed=gate_result.passed,
+            metrics=gate_result.metrics,
+        )
+        
+        return {
+            **state,
+            "structured_output": structured,
+            "gate_2_result": {
+                "passed": gate_result.passed,
+                "message": gate_result.message,
+                "metrics": gate_result.metrics,
+            },
+        }
+    
+    def _gate_2_decision(self, state: GraphState) -> str:
+        """Decide whether to proceed to Agent 3 (compiler) or retry Agent 2."""
+        gate_result = state.get("gate_2_result", {})
+        
+        if gate_result.get("passed"):
+            return "compiler"
+        
+        retry_count = state.get("structure_retry_count", 0)
+        if retry_count >= 2:
+            logger.warning(
+                "agent_2.max_retries",
+                retry_count=retry_count,
+                message="Proceeding despite gate failure",
+            )
+            return "compiler"
+        
+        logger.info(
+            "agent_2.retry",
+            retry_count=retry_count + 1,
+            reason=gate_result.get("message"),
+        )
+        return "retry_agent_2"
+    
+    async def _prepare_for_compiler(self, state: GraphState) -> GraphState:
+        """
+        Prepare structured output for Technical Compiler (Agent 3).
+        
+        If sequential pipeline is enabled, use structured_output as the answer.
+        Otherwise, use the existing answer from _generate_answer.
+        """
+        if self.settings.enable_sequential_pipeline:
+            structured = state.get("structured_output", "")
+            if structured:
+                logger.info(
+                    "pipeline.prepare_compiler",
+                    using="structured_output",
+                    length=len(structured),
+                )
+                return {**state, "answer": structured}
+        
+        # Fall back to existing answer
+        logger.info(
+            "pipeline.prepare_compiler",
+            using="existing_answer",
+        )
+        return state
 
     async def _evaluate_answer(self, state: GraphState) -> GraphState:
         answer = state.get("answer", "")

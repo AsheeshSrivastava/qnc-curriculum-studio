@@ -149,6 +149,50 @@ class Settings(BaseSettings):
         description="Temperature for Chain-of-Thought storyteller agent.",
     )
     
+    # Multi-Agent Sequential Pipeline settings
+    enable_sequential_pipeline: bool = Field(
+        default=True,
+        description="Use 4-agent sequential pipeline vs single-prompt generation.",
+    )
+    synthesis_temperature: float = Field(
+        default=0.3,
+        ge=0.0,
+        le=1.0,
+        description="Temperature for Agent 1: Research & Synthesis (deterministic).",
+    )
+    structure_temperature: float = Field(
+        default=0.4,
+        ge=0.0,
+        le=1.0,
+        description="Temperature for Agent 2: Structure Transformer (balanced).",
+    )
+    
+    # Quality Gate settings
+    gate_1_min_code_blocks: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        description="Minimum code blocks required for Gate 1 (Agent 1 output).",
+    )
+    gate_1_min_citations: int = Field(
+        default=10,
+        ge=5,
+        le=50,
+        description="Minimum citations required for Gate 1 (Agent 1 output).",
+    )
+    gate_2_min_headers: int = Field(
+        default=5,
+        ge=3,
+        le=15,
+        description="Minimum markdown headers required for Gate 2 (Agent 2 output).",
+    )
+    gate_2_min_paragraphs: int = Field(
+        default=8,
+        ge=5,
+        le=20,
+        description="Minimum paragraphs required for Gate 2 (Agent 2 output).",
+    )
+    
     # Technical Compiler settings
     enable_technical_compiler: bool = Field(
         default=True,
