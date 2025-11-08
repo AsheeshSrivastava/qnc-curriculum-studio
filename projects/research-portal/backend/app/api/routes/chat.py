@@ -281,8 +281,31 @@ async def chat_query(
             question=request.question,
             history=[turn.model_dump() for turn in request.history],
         )
+        
+        # Store high-quality Q&A pairs in vector database for self-improving RAG
+        response_data = _format_response(result)
+        quality_score = response_data.evaluation.total_score
+        
+        if quality_score >= 85.0:  # Only store high-quality answers
+            from app.services.qa_storage import store_qa_if_high_quality
+            
+            stored = await store_qa_if_high_quality(
+                session=session,
+                question=request.question,
+                answer=response_data.answer,
+                quality_score=quality_score,
+                min_quality_threshold=85.0,
+            )
+            
+            if stored:
+                logger.info(
+                    "chat_query.qa_stored",
+                    question=request.question[:50],
+                    quality_score=quality_score,
+                )
+        
         return Response(
-            content=_format_response(result).model_dump_json(),
+            content=response_data.model_dump_json(),
             media_type="application/json",
         )
     except Exception as e:
@@ -452,6 +475,24 @@ Remember to maintain your teaching style ({teaching_mode} mode) while using thes
         answer = response.content
         
         logger.info("quick_qa.success", answer_length=len(answer), sources=len(rag_docs) + len(web_results), mode=teaching_mode)
+        
+        # Store chat Q&A pairs in vector database (no quality filter for chat mode)
+        from app.services.qa_storage import store_chat_qa_pair
+        
+        stored = await store_chat_qa_pair(
+            session=session,
+            question=request.question,
+            answer=answer,
+            teaching_mode=teaching_mode,
+            sources_used=len(rag_docs) + len(web_results),
+        )
+        
+        if stored:
+            logger.info(
+                "quick_qa.qa_stored",
+                question=request.question[:50],
+                teaching_mode=teaching_mode,
+            )
         
         return QuickChatResponse(
             answer=answer,
