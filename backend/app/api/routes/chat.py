@@ -49,6 +49,12 @@ def _format_response(state: GraphState) -> ChatResponse:
             evaluation = EvaluationSummary.model_validate(evaluation_raw)
         else:
             # Compiler evaluator format or empty - create compatible format
+            # Wrap compiler scores in nested dict structure for criteria field
+            criteria_dict = {}
+            for key, value in evaluation_raw.items():
+                if key not in ["total_score", "passed", "feedback"]:
+                    criteria_dict[key] = {"score": value, "weight": 1.0}
+            
             evaluation = EvaluationSummary(
                 total_score=evaluation_raw.get("total_score", 0.0),
                 passed=evaluation_raw.get("passed", False),
@@ -56,7 +62,7 @@ def _format_response(state: GraphState) -> ChatResponse:
                 citation_density=0.0,  # Not applicable for compiler
                 exec_ok=True,  # Assume true for compiler
                 scope_ok=True,  # Assume true for compiler
-                criteria=evaluation_raw,  # Store full compiler eval
+                criteria=criteria_dict,  # Wrap compiler eval in nested dict
                 feedback=evaluation_raw.get("feedback", []),
             )
         
