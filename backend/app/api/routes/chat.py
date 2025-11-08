@@ -240,8 +240,9 @@ async def quick_qa(
         embedding_client = get_embedding_client()
         vector_store = PGVectorStore(session=session)
         
-        # Generate embedding for the question
-        question_embedding = await embedding_client.embed_text(request.question)
+        # Generate embedding for the question (embed_documents returns list of embeddings)
+        embeddings = await embedding_client.embed_documents([request.question])
+        question_embedding = embeddings[0] if embeddings else []
         
         rag_docs = await vector_store.similarity_search(
             embedding=question_embedding,
