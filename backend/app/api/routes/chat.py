@@ -35,11 +35,12 @@ def _format_response(state: GraphState) -> ChatResponse:
         evaluation_raw = state.get("evaluation") or state.get("compiler_evaluation") or {}
         citations_payload = state.get("citations") or []
         
-        # Priority: compiled_answer > enriched_answer > answer
+        # Priority: enriched_answer > compiled_answer > answer
+        # Agent 4 enrichment should always be used if available
         answer = (
-            state.get("compiled_answer") 
-            or state.get("enriched_answer") 
-            or state.get("answer", "")
+            state.get("enriched_answer")   # ← Agent 4 output (highest priority)
+            or state.get("compiled_answer")  # ← Agent 3 output (fallback)
+            or state.get("answer", "")       # ← Raw answer (final fallback)
         )
         
         # Handle different evaluation formats
