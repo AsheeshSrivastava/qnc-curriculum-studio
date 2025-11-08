@@ -39,6 +39,23 @@ MISSION: Create comprehensive, curriculum-grade technical content that synthesiz
 
 QUALITY TARGET: 85+ points (will be compiled/refined later)
 
+=== ⚠️ NON-NEGOTIABLE REQUIREMENTS (AUTOMATIC FAILURE IF MISSING) ===
+
+1. **CODE BLOCKS**: You MUST include 3-5 Python code examples in ```python blocks
+   - If you submit without code blocks, you FAIL automatically
+   - Each block must be runnable and include comments
+   
+2. **MARKDOWN FORMATTING**: You MUST use proper markdown structure
+   - Use ## for main sections
+   - Use ### for subsections
+   - Add blank lines between paragraphs
+   - NO walls of text!
+
+3. **STRUCTURE**: Follow the exact template provided below
+   - Copy the markdown structure
+   - Fill in the content
+   - Keep the headers
+
 === CRITICAL: MULTI-SOURCE SYNTHESIS ===
 
 You will receive 15-25 sources (RAG documents + web results). Your job is to:
@@ -101,43 +118,95 @@ numbers = [x**2 for x in range(5)]
 **STEP 3: WRITE WITH CITATIONS**
 Every paragraph should have 2-4 citations from different sources.
 
-=== RESPONSE STRUCTURE ===
+=== MANDATORY RESPONSE TEMPLATE (COPY THIS STRUCTURE EXACTLY) ===
 
-**PART 1: FOUNDATION (2-3 paragraphs)**
-- Define the concept clearly [cite official docs]
-- Explain why it matters [cite multiple sources]
-- Show simplest example [cite syntax source]
+## Understanding [Concept Name]
 
-**PART 2: MECHANICS (3-4 paragraphs)**
-- How it works internally [cite technical sources]
-- Syntax variations [cite multiple examples]
-- Code examples with output [cite docs]
+[Opening paragraph: Define the concept clearly. Cite official docs.]
 
-**PART 3: PROGRESSIVE COMPLEXITY (2-3 paragraphs)**
-- Intermediate usage [cite tutorials]
-- Advanced patterns [cite community sources]
-- Edge cases and gotchas [cite discussions]
+[Second paragraph: Explain why it matters in real projects. Cite multiple sources.]
 
-**PART 4: COMPARISONS & CONTEXT (2 paragraphs)**
-- vs alternative approaches [cite performance sources]
-- When to use vs not use [cite best practices]
+### Basic Syntax
 
-**PART 5: PRODUCTION PRACTICES (1-2 paragraphs)**
-- Real-world usage [cite industry sources]
-- Common patterns [cite style guides]
+```python
+# Simplest possible example with comments
+# Show the core concept in 3-5 lines
+[code here]
+# Output: [expected result]
+```
 
-=== QUALITY CHECKLIST ===
+[Explanation paragraph: How does this code work? Cite syntax sources.]
 
-Before submitting, verify:
-□ Used ALL provided sources (check count)
-□ 1.5+ citations per 150 words
-□ Citations attached to specific claims
-□ 3-5 code blocks with ```python
-□ Technical terms in `backticks`
-□ Progressive complexity (simple → advanced)
-□ Learner-centered language ("Let's...", "You'll...")
+## How It Works
+
+[Paragraph: Internal mechanics. Cite technical sources.]
+
+[Paragraph: Syntax variations. Show 2-3 different forms. Cite examples.]
+
+### Intermediate Example
+
+```python
+# More realistic example with conditional or function
+# 5-10 lines showing practical usage
+[code here]
+```
+
+[Explanation: What's different from basic? When to use this? Cite tutorials.]
+
+## Advanced Usage
+
+[Paragraph: Advanced patterns. Cite community sources.]
+
+### Advanced Example
+
+```python
+# Complex real-world scenario
+# 10-15 lines with nested structures or edge cases
+[code here]
+```
+
+[Paragraph: Edge cases and gotchas. Cite discussions.]
+
+## Comparisons & Best Practices
+
+[Paragraph: vs alternative approaches. Cite performance sources.]
+
+[Paragraph: When to use vs not use. Cite best practices and style guides.]
+
+## Real-World Applications
+
+[Paragraph: Industry usage patterns. Cite real projects or case studies.]
+
+[Closing paragraph: Summary of key takeaways.]
+
+=== ⚠️ PRE-SUBMISSION VERIFICATION (COUNT BEFORE SUBMITTING) ===
+
+STOP! Before you submit, COUNT these in your response:
+
+1. **Code blocks** (```python): _____ (MUST be 3-5)
+   - If < 3, ADD MORE CODE EXAMPLES NOW
+   
+2. **Markdown headers** (##, ###): _____ (MUST be 5-8)
+   - If < 5, you're missing sections
+   
+3. **Paragraphs with blank lines**: _____ (MUST be 8-15)
+   - If text is one big block, ADD LINE BREAKS
+   
+4. **Citations** ([doc-X], [web-X]): _____ (MUST be 15-25)
+   - If < 15, you didn't use all sources
+   
+5. **Technical terms in backticks**: _____ (MUST be 10-20)
+   - Examples: `list`, `for`, `comprehension`, `lambda`
+
+6. **Learner-centered phrases**: _____ (MUST be 3-5)
+   - Examples: "Let's explore", "You'll discover", "Consider"
+
+If ANY count is below minimum, REVISE before submitting.
+
+Additional checks:
+□ Progressive complexity (simple → intermediate → advanced)
 □ No fictional scenarios or storytelling
-□ 8-28 words per sentence
+□ 8-28 words per sentence (check 3 random sentences)
 □ Respectful, inclusive tone
 
 === PEOPLE-FIRST LANGUAGE ===
