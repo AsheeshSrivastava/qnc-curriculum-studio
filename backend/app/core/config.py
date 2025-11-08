@@ -81,10 +81,10 @@ class Settings(BaseSettings):
         description="Comma separated key=value header pairs for OTLP exporter authentication.",
     )
     
-    # Narrative enrichment settings (Aethelgard Academy)
+    # Narrative enrichment settings (Quest and Crossfire™)
     enable_narrative_enrichment: bool = Field(
-        default=False,
-        description="Enable Gemini-powered narrative enrichment for learning experiences.",
+        default=True,  # ENABLED: Agent 4 adds engaging real-world context
+        description="Enable Agent 4: Narrative enrichment with industry insights and real-world examples.",
     )
     enrichment_quality_threshold: float = Field(
         default=90.0,

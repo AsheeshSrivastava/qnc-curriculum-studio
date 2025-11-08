@@ -30,6 +30,7 @@ from app.graph.technical_compiler import TechnicalCompiler
 from app.graph.research_synthesis_agent import ResearchSynthesisAgent
 from app.graph.structure_transformer_agent import StructureTransformerAgent
 from app.graph.quality_gates import QualityGates
+from app.graph.narrative_enrichment_v2 import NarrativeEnrichmentAgent
 from app.quality.narrative_evaluator import NarrativeQualityEvaluator
 from app.quality.aethelgard_evaluator import AethelgardQualityEvaluator
 from app.quality.compiler_evaluator import CompilerQualityEvaluator
@@ -279,6 +280,16 @@ class ResearchGraph:
             self.technical_compiler = None
             self.compiler_evaluator = None
         
+        # Narrative Enrichment Agent (Agent 4)
+        if self.settings.enable_narrative_enrichment:
+            self.narrative_enrichment_agent = NarrativeEnrichmentAgent(
+                secret_store=self.secret_store,
+                provider=self.provider,
+                secret_token=self.secret_token,
+            )
+        else:
+            self.narrative_enrichment_agent = None
+        
         # Multi-agent pipeline components
         if self.settings.enable_multi_agent_pipeline:
             self.complexity_classifier = ComplexityClassifier()
@@ -323,6 +334,10 @@ class ResearchGraph:
                 graph.add_node("evaluate_compiler", self._evaluate_compiler)
                 graph.add_node("recompile", self._recompile)
             
+            # Agent 4: Narrative Enrichment (NEW)
+            if self.settings.enable_narrative_enrichment:
+                graph.add_node("agent_4_enrich", self._agent_4_enrich)
+            
             # Pipeline flow
             graph.set_entry_point("research")
             graph.add_edge("research", "agent_1_synthesize")
@@ -353,12 +368,23 @@ class ResearchGraph:
                 graph.add_edge("compile_technical", "evaluate_compiler")
                 
                 # Quality Gate 3: Compiler evaluation
-                graph.add_conditional_edges(
-                    "evaluate_compiler",
-                    self._compiler_decision,
-                    {"recompile": "recompile", "done": END},
-                )
-                graph.add_edge("recompile", "evaluate_compiler")
+                if self.settings.enable_narrative_enrichment:
+                    # If Agent 4 enabled, go to enrichment after compiler passes
+                    graph.add_conditional_edges(
+                        "evaluate_compiler",
+                        self._compiler_decision,
+                        {"recompile": "recompile", "done": "agent_4_enrich"},
+                    )
+                    graph.add_edge("recompile", "evaluate_compiler")
+                    graph.add_edge("agent_4_enrich", END)
+                else:
+                    # No Agent 4, end after compiler
+                    graph.add_conditional_edges(
+                        "evaluate_compiler",
+                        self._compiler_decision,
+                        {"recompile": "recompile", "done": END},
+                    )
+                    graph.add_edge("recompile", "evaluate_compiler")
             else:
                 # No compiler, end after Agent 2
                 graph.add_conditional_edges(
@@ -1403,4 +1429,57 @@ class ResearchGraph:
             "compiled_answer": compiled,
             "compiler_retry_count": retry_count,
         }
+    
+    # ========================================
+    # AGENT 4: NARRATIVE ENRICHMENT
+    # ========================================
+    
+    async def _agent_4_enrich(self, state: GraphState) -> GraphState:
+        """
+        Agent 4: Add engaging narrative enrichment to compiled content.
+        
+        This is the final polish that transforms technically accurate content
+        into memorable learning experiences with real-world context.
+        """
+        if not self.narrative_enrichment_agent:
+            logger.warning("agent_4.disabled")
+            return state
+        
+        compiled_content = state.get("compiled_answer", "")
+        question = state.get("question", "")
+        
+        if not compiled_content:
+            logger.warning("agent_4.no_content")
+            return state
+        
+        logger.info("agent_4.start", input_length=len(compiled_content))
+        
+        try:
+            # Enrich the compiled content
+            enriched_content = await self.narrative_enrichment_agent.enrich(
+                compiled_content=compiled_content,
+                question=question,
+            )
+            
+            logger.info(
+                "agent_4.success",
+                input_length=len(compiled_content),
+                output_length=len(enriched_content),
+                enrichment_added=len(enriched_content) - len(compiled_content),
+            )
+            
+            return {
+                **state,
+                "enriched_answer": enriched_content,
+                "answer": enriched_content,  # Update final answer
+            }
+        
+        except Exception as e:
+            logger.error("agent_4.error", error=str(e), exc_info=True)
+            # Return original compiled content if enrichment fails
+            return {
+                **state,
+                "enriched_answer": compiled_content,
+                "answer": compiled_content,
+            }
 
