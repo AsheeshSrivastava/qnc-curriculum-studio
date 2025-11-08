@@ -1,0 +1,21 @@
+# Environment files
+.env
+config/settings.env
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+
+# IDE
+.idea/
+.vscode/
+

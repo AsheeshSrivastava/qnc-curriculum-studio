@@ -1,0 +1,113 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Poetry
+poetry.lock
+
+# Environment variables (ALL variants)
+.env
+.env.*
+*.env
+config/settings.env*
+!config/settings.env.template
+!config/settings.env.example
+backend/config/settings.env*
+!backend/config/settings.env.template
+!backend/config/settings.env.example
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Streamlit
+.streamlit/secrets.toml
+.streamlit/config.toml
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Redis
+dump.rdb
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Project specific - Debug/Test files
+backend/test_*.py
+backend/check_*.py
+backend/*.ps1
+backend/run_and_test.ps1
+frontend/*.pyc
+
+# Debug/Status markdown files (keep only README, SECURITY, LICENSE)
+*_STATUS.md
+*_ERROR*.md
+*_COMPLETE.md
+*_FIXED.md
+*_RESOLVED.md
+DEBUGGING_*.md
+TESTING_*.md
+TROUBLESHOOTING_*.md
+IMPLEMENTATION_*.md
+EXPERIMENT_*.md
+TEMPORARY_*.md
+FULL_STACK_*.md
+ISSUES_*.md
+
+# User data directories
+Python database/
+backend/Python database/
+
+
+

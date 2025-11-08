@@ -1,0 +1,298 @@
+﻿================================================================================
+BULK INGESTION: Python Learning Materials
+================================================================================
+
+Found 43 files:
+  - Markdown files: 43
+  - PDF files: 0
+
+
+[1/43] Processing: Python Code Block.md
+--------------------------------------------------------------------------------
+  [FAIL] ERROR: 
+
+[2/43] Processing: Preparing for Python Exam on 10th Dec 2023 on Core Concept s in Python and Numpy and Pandas.md
+  Original name: ≡ƒôîPreparing for Python Exam on 10th Dec 2023 on Core Concept s in Python and Numpy and Pandas.md
+--------------------------------------------------------------------------------
+  [FAIL] ERROR: Uploaded document does not appear to contain Python-related content.
+
+[3/43] Processing: About Anaconda.md
+  Original name: ≡ƒôÑAbout Anaconda.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 4f756ac0-b4ec-4c5e-a5bd-a20cb70ef1dc
+     Chunks: 10
+     Tokens: None
+
+[4/43] Processing: Annotation.md
+  Original name: ≡ƒôÑAnnotation.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 984f17d9-126d-4d36-a292-490ced085481
+     Chunks: 3
+     Tokens: None
+
+[5/43] Processing: Binary Types.md
+  Original name: ≡ƒôÑBinary Types.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 49e17f1b-ce69-4340-9fdb-c8e2a39b0bd6
+     Chunks: 4
+     Tokens: None
+
+[6/43] Processing: Boolean Data Types in Python.md
+  Original name: ≡ƒôÑBoolean Data Types in Python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: adcdb16f-af28-4d32-8a91-f5290606362f
+     Chunks: 2
+     Tokens: None
+
+[7/43] Processing: Comments in Python.md
+  Original name: ≡ƒôÑComments in Python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 13618c5a-8440-4760-b679-f10eba30f3a1
+     Chunks: 5
+     Tokens: None
+[8/43] SKIP: Content Log.md (original: ≡ƒôÑContent Log.md)
+
+[9/43] Processing: Conversion of Decimal to Octal to HexaDecimal.md
+  Original name: ≡ƒôÑConversion of Decimal to Octal to HexaDecimal.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 06c98b7e-33a9-4dc0-8a95-2cf4f8012971
+     Chunks: 2
+     Tokens: None
+
+[10/43] Processing: Data Types in Python.md
+  Original name: ≡ƒôÑData Types in Python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: da0206f3-fae1-4772-9e7f-60127b987165
+     Chunks: 4
+     Tokens: None
+
+[11/43] Processing: Data types in Python_1.md
+  Original name: ≡ƒôÑData types in Python_1.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 5264b1f8-fa7a-4d1b-8368-8b6365e2c478
+     Chunks: 3
+     Tokens: None
+
+[12/43] Processing: Errors in Python.md
+  Original name: ≡ƒôÑErrors in Python.md
+--------------------------------------------------------------------------------
+  [FAIL] ERROR: Uploaded document does not appear to contain Python-related content.
+
+[13/43] Processing: FrozenSet.md
+  Original name: ≡ƒôÑFrozenSet.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: de61c312-91bc-4ce7-8c79-be27959d7f81
+     Chunks: 1
+     Tokens: None
+
+[14/43] Processing: Garbage Collection in Python.md
+  Original name: ≡ƒôÑGarbage Collection in Python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 4a4a206e-ecb7-4c3f-8af2-e415fd8b7ec7
+     Chunks: 2
+     Tokens: None
+
+[15/43] Processing: General Coding Practices.md
+  Original name: ≡ƒôÑGeneral Coding Practices.md
+--------------------------------------------------------------------------------
+  [FAIL] ERROR: Uploaded document does not appear to contain Python-related content.
+
+[16/43] Processing: Guide to Creating a Custom GPT Model for Chat Applications.md
+  Original name: ≡ƒôÑGuide to Creating a Custom GPT Model for Chat Applications.md
+--------------------------------------------------------------------------------
+  [FAIL] ERROR: Uploaded document does not appear to contain Python-related content.
+[17/43] SKIP: How I Take Notes For Computer Science With Obsidian - A Deep Dive and Tutorial.md (original: ≡ƒôÑHow I Take Notes For Computer Science With Obsidian - A Deep Dive and Tutorial.md)
+[18/43] SKIP: How to Create Monthly _ Quaterly_ Yearly Note.md (original: ≡ƒôÑHow to Create Monthly , Quaterly, Yearly Note.md)
+[19/43] SKIP: How to create my workflow in Obsidion.md (original: ≡ƒôÑHow to create my workflow in Obsidion.md)
+
+[20/43] Processing: Immutable and Mutable Objects in python.md
+  Original name: ≡ƒôÑImmutable and Mutable Objects in python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 68a17446-59af-433a-a1fc-2bc03dc3e011
+     Chunks: 3
+     Tokens: None
+
+[21/43] Processing: Importing in Python.md
+  Original name: ≡ƒôÑImporting in Python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: f417abbd-a07f-4e1f-a5e3-f0247a43e55f
+     Chunks: 2
+     Tokens: None
+[22/43] SKIP: Jupyter Setup for Obsidian.md (original: ≡ƒôÑJupyter Setup for Obsidian.md)
+
+[23/43] Processing: Literals in Python.md
+  Original name: ≡ƒôÑLiterals in Python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 8bdd62a8-0fcb-4228-8f36-9ec225bbfd45
+     Chunks: 8
+     Tokens: None
+
+[24/43] Processing: MCQs for Python Exam.md
+  Original name: ≡ƒôÑMCQs for Python Exam.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: d43c9132-5c7d-434c-b67f-087105468077
+     Chunks: 14
+     Tokens: None
+
+[25/43] Processing: Memory Management in Python.md
+  Original name: ≡ƒôÑMemory Management in Python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 6e4f8f7a-2c2a-409c-a342-685ab9521516
+     Chunks: 4
+     Tokens: None
+[26/43] SKIP: My Energies.md (original: ≡ƒôÑMy Energies.md)
+[27/43] SKIP: My Weekly Planning Workflow.md (original: ≡ƒôÑMy Weekly Planning Workflow.md)
+
+[28/43] Processing: None.md
+  Original name: ≡ƒôÑNone.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: a320850b-03ee-4530-b0a5-a3445659e5b8
+     Chunks: 3
+     Tokens: None
+
+[29/43] Processing: Numeric Data Types.md
+  Original name: ≡ƒôÑNumeric Data Types.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 9de3fc95-5492-43f0-a889-ad6f1099cd56
+     Chunks: 5
+     Tokens: None
+
+[30/43] Processing: Object in a python.md
+  Original name: ≡ƒôÑObject in a python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: f592e31d-6f7c-43f8-bebd-2fdb30fbb5fc
+     Chunks: 4
+     Tokens: None
+
+[31/43] Processing: Python Basics.md
+  Original name: ≡ƒôÑPython Basics.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: d75e1711-ce81-44cb-9415-174a29601376
+     Chunks: 2
+     Tokens: None
+
+[32/43] Processing: Python Introduction.md
+  Original name: ≡ƒôÑPython Introduction.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: d0c1d9e3-f91a-41de-92bb-a5c82cb96372
+     Chunks: 9
+     Tokens: None
+
+[33/43] Processing: Python Programming Components.md
+  Original name: ≡ƒôÑPython Programming Components.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 0248f464-4075-4539-b42d-8391795d925b
+     Chunks: 26
+     Tokens: None
+
+[34/43] Processing: Python Sample test by Learnbay.md
+  Original name: ≡ƒôÑPython Sample test by Learnbay.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: aa812cd3-0e42-4442-9c91-33ca62d00b75
+     Chunks: 3
+     Tokens: None
+
+[35/43] Processing: Python Standard String Functions.md
+  Original name: ≡ƒôÑPython Standard String Functions.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 51833652-a4eb-4c8b-bcb3-06eab537c51f
+     Chunks: 7
+     Tokens: None
+
+[36/43] Processing: Python Strategy for the next 2 days.md
+  Original name: ≡ƒôÑPython Strategy for the next 2 days.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 255653fd-9602-4d8a-b56f-c80ed3e41e70
+     Chunks: 7
+     Tokens: None
+
+[37/43] Processing: Python_s Memory Management.md
+  Original name: ≡ƒôÑPython's Memory Management.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 645a77f2-cf68-476b-b4a4-5c401f1262c7
+     Chunks: 2
+     Tokens: None
+
+[38/43] Processing: Strings Data type in Python.md
+  Original name: ≡ƒôÑStrings Data type in Python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 7f08e3a7-5298-464c-b0d9-323a6c17b548
+     Chunks: 6
+     Tokens: None
+
+[39/43] Processing: Strings in Python note.md
+  Original name: ≡ƒôÑStrings in Python note.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: eaaa965b-15da-4142-a6fa-7de5dd7f5095
+     Chunks: 5
+     Tokens: None
+
+[40/43] Processing: Variables in Python.md
+  Original name: ≡ƒôÑVariables in Python.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 1b72ac79-7a72-4a58-bf61-a9f6beeafb7a
+     Chunks: 3
+     Tokens: None
+
+[41/43] Processing:   Python MOC.md
+  Original name: ≡ƒù║∩╕Å ≡ƒÉì Python MOC.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 132da077-4b09-49e0-b9f2-81970a5ce9e1
+     Chunks: 1
+     Tokens: None
+
+[42/43] Processing: Coding MoC.md
+  Original name: ≡ƒù║∩╕ÅCoding MoC.md
+--------------------------------------------------------------------------------
+  [FAIL] ERROR: Uploaded document does not appear to contain Python-related content.
+
+[43/43] Processing: Python Module Exam.md
+  Original name: ≡ƒÜºPython Module Exam.md
+--------------------------------------------------------------------------------
+  [OK] SUCCESS
+     Document ID: 34c76ed3-f494-4ea2-9b48-ddb2cab84022
+     Chunks: 1
+     Tokens: None
+
+================================================================================
+INGESTION COMPLETE
+================================================================================
+
+Total files: 43
+  [OK] Successful: 30
+  [FAIL] Failed: 6
+  [SKIP] Skipped: 7
+
+SUCCESS! Your Python knowledge base is now ready!
+The system will use RAG to retrieve from these materials first.
+LLM calls will only happen if RAG doesn't find relevant content.
+
