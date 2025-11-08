@@ -92,7 +92,7 @@ class APIClient:
                     json=payload,
                     params={"stream": "true"},
                     stream=True,
-                    timeout=120,
+                    timeout=360,  # 6 minutes for quality-first pipeline
                 )
                 response.raise_for_status()
                 return response
@@ -100,7 +100,7 @@ class APIClient:
                 response = self.session.post(
                     f"{self.base_url}/api/chat/query",
                     json=payload,
-                    timeout=120,
+                    timeout=360,  # 6 minutes for quality-first pipeline
                 )
                 response.raise_for_status()
                 return response.json()
