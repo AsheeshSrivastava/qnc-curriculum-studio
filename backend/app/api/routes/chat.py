@@ -31,7 +31,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 def _format_response(state: GraphState) -> ChatResponse:
     try:
-        evaluation = state.get("evaluation") or {}
+        evaluation_raw = state.get("evaluation") or state.get("compiler_evaluation") or {}
         citations_payload = state.get("citations") or []
         
         # Priority: compiled_answer > enriched_answer > answer
@@ -41,10 +41,29 @@ def _format_response(state: GraphState) -> ChatResponse:
             or state.get("answer", "")
         )
         
+        # Handle different evaluation formats
+        # Compiler evaluator returns: {technical_preservation, psw_structure, ...}
+        # Quality evaluator returns: {coverage_score, citation_density, ...}
+        if "coverage_score" in evaluation_raw:
+            # Standard quality evaluator format
+            evaluation = EvaluationSummary.model_validate(evaluation_raw)
+        else:
+            # Compiler evaluator format or empty - create compatible format
+            evaluation = EvaluationSummary(
+                total_score=evaluation_raw.get("total_score", 0.0),
+                passed=evaluation_raw.get("passed", False),
+                coverage_score=0.0,  # Not applicable for compiler
+                citation_density=0.0,  # Not applicable for compiler
+                exec_ok=True,  # Assume true for compiler
+                scope_ok=True,  # Assume true for compiler
+                criteria=evaluation_raw,  # Store full compiler eval
+                feedback=evaluation_raw.get("feedback", []),
+            )
+        
         return ChatResponse(
             answer=answer,
             citations=[Citation.model_validate(item) for item in citations_payload],
-            evaluation=EvaluationSummary.model_validate(evaluation),
+            evaluation=evaluation,
         )
     except Exception as e:
         logger.error("format_response.error", error=str(e), exc_info=True)
@@ -55,6 +74,10 @@ def _format_response(state: GraphState) -> ChatResponse:
             evaluation=EvaluationSummary(
                 total_score=0.0,
                 passed=False,
+                coverage_score=0.0,
+                citation_density=0.0,
+                exec_ok=False,
+                scope_ok=False,
                 criteria={},
                 feedback=[f"Error: {str(e)}"]
             ),
