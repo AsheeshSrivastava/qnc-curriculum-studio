@@ -134,16 +134,14 @@ class TavilyResearchClient:
         if not domains:
             return []
 
-        # Build site-restricted query
-        site_filters = " OR ".join([f"site:{domain}" for domain in domains])
-        enhanced_query = f"{query} ({site_filters})"
-
+        # Use simple query with Tavily's native domain filtering
+        # Don't duplicate site filters in query string (causes 400 errors)
         try:
             # Execute Tavily search
             response = self.client.search(
-                query=enhanced_query,
+                query=query,  # Use original query without site filters
                 max_results=limit,
-                search_depth="advanced",  # Use advanced search for better quality
+                search_depth="basic",  # Use basic search (advanced may not be available on all plans)
                 include_domains=domains,  # Restrict to priority domains
             )
 
