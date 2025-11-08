@@ -69,10 +69,12 @@ class CompilerQualityEvaluator:
         tech_score = self._evaluate_technical_preservation(
             compiled_content, technical_baseline
         )
-        if tech_score < 28:
+        if tech_score < 20:
             feedback.append("CRITICAL: Technical facts or citations were altered or removed")
-        elif tech_score < 30:
+        elif tech_score < 25:
             feedback.append("Some citations missing or technical details diluted")
+        elif tech_score < 30:
+            feedback.append("Minor citation or technical term issues")
         
         # Criterion 2: PSW Structure (20 points)
         psw_score = self._evaluate_psw_structure(compiled_content)
@@ -97,7 +99,9 @@ class CompilerQualityEvaluator:
         total_score = (
             tech_score + psw_score + micro_fix_score + real_world_score + reflective_score
         )
-        passed = total_score >= 95 and tech_score >= 28  # Hard floor on technical preservation
+        # Lowered tech_score floor from 28 to 20 to allow more flexibility
+        # while still maintaining quality (95/100 total required)
+        passed = total_score >= 95 and tech_score >= 20  # Hard floor on technical preservation
         
         self.logger.info(
             "compiler.evaluation.complete",

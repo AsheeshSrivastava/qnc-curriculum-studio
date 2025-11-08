@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from langchain_openai import ChatOpenAI
@@ -11,19 +12,188 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-COMPILER_PROMPT = """You are a Technical Compiler for Aethelgard Academy. Your ONLY job is to restructure technical content while preserving EVERY SINGLE FACT, CITATION, and CODE BLOCK.
 
-=== CRITICAL: CITATION PRESERVATION ===
-YOU WILL BE PENALIZED IF YOU LOSE EVEN ONE CITATION.
+def _extract_citation_ids(text: str) -> set[str]:
+    """Extract all citation IDs from text (e.g., [doc-1], [web-5])."""
+    return set(re.findall(r'\[(doc|web)-\d+\]', text))
 
-Input citations: {citations}
 
-RULE: Every [doc-X] and [web-X] from the technical answer MUST appear in your output.
-- Attach citations to the SAME facts they were originally attached to
-- If the technical answer has [doc-1], your output MUST have [doc-1]
-- If the technical answer has [web-5], your output MUST have [web-5]
-- NEVER remove, skip, or change citation IDs
-- NEVER consolidate citations (keep them separate)
+def _inject_missing_citations(
+    compiled: str,
+    technical_answer: str,
+    missing_citations: list[str],
+) -> str:
+    """
+    Inject missing citations back into compiled content.
+    
+    Strategy:
+    1. Find where each citation appeared in the technical answer
+    2. Extract the sentence/context around it
+    3. Find similar sentence in compiled content
+    4. Inject citation at the end of that sentence
+    
+    Args:
+        compiled: The compiled content (missing citations)
+        technical_answer: The original technical answer (has all citations)
+        missing_citations: List of citation IDs to inject (e.g., ['doc-1', 'web-5'])
+        
+    Returns:
+        Compiled content with missing citations injected
+    """
+    if not missing_citations:
+        return compiled
+    
+    logger.info(
+        "citation_injection.start",
+        missing_count=len(missing_citations),
+        missing=missing_citations,
+    )
+    
+    # Split technical answer into sentences
+    tech_sentences = re.split(r'(?<=[.!?])\s+', technical_answer)
+    
+    for citation_id in missing_citations:
+        citation_tag = f"[{citation_id}]"
+        
+        # Find the sentence in technical answer that contains this citation
+        source_sentence = None
+        for sentence in tech_sentences:
+            if citation_tag in sentence:
+                # Remove the citation tag to get the core content
+                source_sentence = sentence.replace(citation_tag, '').strip()
+                break
+        
+        if not source_sentence:
+            logger.warning(
+                "citation_injection.no_source",
+                citation=citation_id,
+            )
+            continue
+        
+        # Extract key terms from the source sentence (for matching)
+        # Use words longer than 4 chars, excluding common words
+        key_terms = [
+            word.lower() for word in re.findall(r'\b\w{5,}\b', source_sentence)
+            if word.lower() not in {'which', 'where', 'there', 'these', 'those', 'their', 'about'}
+        ]
+        
+        if not key_terms:
+            logger.warning(
+                "citation_injection.no_key_terms",
+                citation=citation_id,
+                sentence=source_sentence[:100],
+            )
+            continue
+        
+        # Find the best matching sentence in compiled content
+        compiled_sentences = re.split(r'(?<=[.!?])\s+', compiled)
+        best_match_idx = -1
+        best_match_score = 0
+        
+        for idx, comp_sentence in enumerate(compiled_sentences):
+            comp_lower = comp_sentence.lower()
+            # Count how many key terms appear in this sentence
+            match_score = sum(1 for term in key_terms if term in comp_lower)
+            if match_score > best_match_score:
+                best_match_score = match_score
+                best_match_idx = idx
+        
+        # If we found a good match (at least 1 key term), inject citation
+        if best_match_idx >= 0 and best_match_score > 0:
+            target_sentence = compiled_sentences[best_match_idx]
+            
+            # Don't inject if citation already exists in this sentence
+            if citation_tag not in target_sentence:
+                # Inject citation at the end of the sentence (before period/punctuation)
+                if target_sentence.endswith('.'):
+                    injected_sentence = target_sentence[:-1] + f" {citation_tag}."
+                elif target_sentence.endswith('!') or target_sentence.endswith('?'):
+                    injected_sentence = target_sentence[:-1] + f" {citation_tag}" + target_sentence[-1]
+                else:
+                    injected_sentence = target_sentence + f" {citation_tag}"
+                
+                compiled_sentences[best_match_idx] = injected_sentence
+                
+                logger.info(
+                    "citation_injection.success",
+                    citation=citation_id,
+                    match_score=best_match_score,
+                    key_terms=key_terms[:3],
+                )
+            else:
+                logger.info(
+                    "citation_injection.already_exists",
+                    citation=citation_id,
+                )
+        else:
+            logger.warning(
+                "citation_injection.no_match",
+                citation=citation_id,
+                key_terms=key_terms[:3],
+            )
+    
+    # Rejoin sentences
+    injected_compiled = ' '.join(compiled_sentences)
+    
+    # Verify injection success
+    final_citations = _extract_citation_ids(injected_compiled)
+    injected_count = len([c for c in missing_citations if f"[{c}]" in injected_compiled])
+    
+    logger.info(
+        "citation_injection.complete",
+        attempted=len(missing_citations),
+        injected=injected_count,
+        success_rate=f"{injected_count/len(missing_citations)*100:.1f}%",
+    )
+    
+    return injected_compiled
+
+COMPILER_PROMPT = """# ROLE & CONTEXT
+You are an Expert Technical Content Compiler specializing in educational restructuring.
+
+Your PRIMARY OBJECTIVE: Transform technical content into learner-friendly format while maintaining 100% factual accuracy.
+
+Your CRITICAL CONSTRAINT: You MUST preserve EVERY citation, code block, and technical term EXACTLY as provided. Citation loss = automatic failure.
+
+# CITATION PRESERVATION PROTOCOL (NON-NEGOTIABLE)
+
+## Step 1: Citation Inventory
+Input contains these citations (YOU MUST USE ALL OF THEM):
+{citations}
+
+## Step 2: Citation Mapping Rules
+BEFORE you restructure, understand these ABSOLUTE RULES:
+
+1. **One-to-One Preservation**: Every [doc-X] and [web-X] from input → MUST appear in output
+   - Input has [doc-1]? → Output MUST have [doc-1]
+   - Input has [web-5]? → Output MUST have [web-5]
+   - NO EXCEPTIONS
+
+2. **Attachment Fidelity**: Keep citations with their ORIGINAL facts
+   - If input says "Python uses duck typing [doc-3]" 
+   - Output must keep [doc-3] with duck typing explanation
+   - Don't move citations to different facts
+
+3. **No Consolidation**: NEVER merge multiple citations
+   - Input: "Lists are mutable [doc-1] and ordered [doc-2]"
+   - Output: "Lists are mutable [doc-1] and ordered [doc-2]" ✅
+   - NOT: "Lists are mutable and ordered [doc-1][doc-2]" ❌
+
+4. **Sentence Splitting**: If you split a sentence, attach citation to the MOST RELEVANT part
+   - Input: "List comprehensions are faster and more readable [web-4]"
+   - If split into 2 sentences, attach [web-4] to the sentence about speed OR readability (whichever is primary)
+
+5. **Paragraph Restructuring**: When moving content, MOVE THE CITATIONS WITH IT
+   - Don't leave citations orphaned in old locations
+   - Citations travel with their facts
+
+## Step 3: Verification Checkpoint
+BEFORE submitting, COUNT:
+- Input citations: {citation_count}
+- Output citations: [YOU MUST COUNT THESE]
+- THEY MUST MATCH EXACTLY
+
+If they don't match, you FAILED. Go back and find the missing citations.
 
 === CRITICAL: CODE PRESERVATION ===
 - Every ```python code block MUST be preserved EXACTLY as written
@@ -105,18 +275,25 @@ Citations (CHECK EACH ONE):
 === YOUR OUTPUT (MUST FOLLOW STRUCTURE ABOVE) ===
 """
 
-RECOMPILE_PROMPT = """You are recompiling technical content based on quality feedback.
+RECOMPILE_PROMPT = """# RECOMPILATION TASK
 
-=== CRITICAL REMINDER ===
-YOU FAILED TO MEET QUALITY STANDARDS. Fix the issues below while preserving EVERY citation and code block.
+## Context
+You are recompiling technical content that FAILED quality evaluation. This is your second chance.
 
-=== QUALITY FEEDBACK ===
+## Why You Failed
 {feedback}
 
-=== ORIGINAL TECHNICAL ANSWER (YOUR SOURCE OF TRUTH) ===
+## Critical Constraints (Same as Before)
+1. **Citation Preservation**: ALL {citation_count} citations MUST appear in output
+2. **Code Preservation**: ALL code blocks MUST be preserved exactly
+3. **Technical Accuracy**: NO facts can be changed or removed
+
+## Your Source Materials
+
+### Original Technical Answer (YOUR SOURCE OF TRUTH):
 {technical_answer}
 
-=== CITATIONS (MUST ALL APPEAR IN OUTPUT) ===
+### Citations (COUNT THEM - Must be {citation_count} in your output):
 {citations}
 
 === YOUR PREVIOUS ATTEMPT (FAILED) ===
@@ -214,12 +391,14 @@ class TechnicalCompiler:
             citations_str = "\n".join(
                 [f"[{c.get('id', '')}] {c.get('source', 'N/A')}" for c in citations]
             )
+            citation_count = len(citations)
             
             if feedback and previous_compilation:
                 # Recompile with feedback
                 prompt = RECOMPILE_PROMPT.format(
                     technical_answer=technical_answer,
                     citations=citations_str,
+                    citation_count=citation_count,
                     previous_compilation=previous_compilation,
                     feedback="\n".join(feedback),
                 )
@@ -228,6 +407,7 @@ class TechnicalCompiler:
                 prompt = COMPILER_PROMPT.format(
                     technical_answer=technical_answer,
                     citations=citations_str,
+                    citation_count=citation_count,
                 )
             
             response = await self.model.ainvoke(prompt)
@@ -244,11 +424,43 @@ class TechnicalCompiler:
                     "compiler.missing_citations",
                     missing=missing_citations,
                 )
+                
+                # CITATION PRESERVATION LAYER: Inject missing citations back
+                self.logger.info(
+                    "compiler.citation_injection.starting",
+                    missing_count=len(missing_citations),
+                )
+                compiled = _inject_missing_citations(
+                    compiled=compiled,
+                    technical_answer=technical_answer,
+                    missing_citations=missing_citations,
+                )
+                
+                # Re-verify after injection
+                still_missing = [
+                    cid for cid in citation_ids if cid and f"[{cid}]" not in compiled
+                ]
+                if still_missing:
+                    self.logger.error(
+                        "compiler.citation_injection.failed",
+                        still_missing=still_missing,
+                    )
+                else:
+                    self.logger.info(
+                        "compiler.citation_injection.success",
+                        recovered=len(missing_citations),
+                    )
+            
+            final_citations_preserved = len([
+                cid for cid in citation_ids if cid and f"[{cid}]" in compiled
+            ])
             
             self.logger.info(
                 "compiler.complete",
                 compiled_length=len(compiled),
-                citations_preserved=len(citation_ids) - len(missing_citations),
+                citations_preserved=final_citations_preserved,
+                citations_total=len(citation_ids),
+                preservation_rate=f"{final_citations_preserved/max(1, len(citation_ids))*100:.1f}%",
             )
             
             return compiled
