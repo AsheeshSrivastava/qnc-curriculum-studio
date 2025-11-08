@@ -22,6 +22,14 @@ class ChatRequest(BaseModel):
         description="Opaque token representing a user-supplied provider key.",
     )
     history: list[ChatHistoryTurn] = Field(default_factory=list)
+    model: Optional[str] = Field(
+        default=None,
+        description="Optional model override (e.g., gpt-4o, gpt-4o-mini, o1-preview).",
+    )
+    mode: Literal["chat", "generate"] = Field(
+        default="generate",
+        description="Mode: 'chat' for quick Q&A, 'generate' for full pipeline.",
+    )
 
 
 class Citation(BaseModel):
@@ -47,6 +55,13 @@ class ChatResponse(BaseModel):
     answer: str
     citations: list[Citation]
     evaluation: EvaluationSummary
+
+
+class QuickChatResponse(BaseModel):
+    """Simplified response for chat mode (no quality evaluation)."""
+    answer: str
+    sources_used: int = Field(description="Number of sources used (RAG + Tavily)")
+    rag_only: bool = Field(description="Whether answer was generated from RAG only (no Tavily)")
 
 
 class ExportFormat(str):

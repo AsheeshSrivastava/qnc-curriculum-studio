@@ -64,6 +64,24 @@ def render_sidebar():
         # Quick Settings
         st.markdown("### ⚙️ Quick Settings")
         
+        # Model Selection
+        st.markdown("#### 🤖 Model Selection")
+        model_options = {
+            "gpt-4o-mini": "GPT-4o Mini (Fast & Cheap)",
+            "gpt-4o": "GPT-4o (Balanced) ⭐",
+            "gpt-4-turbo": "GPT-4 Turbo (Advanced)",
+            "o1-preview": "O1 Preview (Reasoning)",
+        }
+        
+        selected_model = st.selectbox(
+            "Choose Model",
+            options=list(model_options.keys()),
+            index=1,  # Default to gpt-4o
+            format_func=lambda x: model_options[x],
+            key="selected_model",
+            help="Select the AI model for generation. GPT-4o is recommended for balanced performance."
+        )
+        
         # Show quality toggle
         show_quality = st.toggle(
             "📊 Show Quality Metrics",

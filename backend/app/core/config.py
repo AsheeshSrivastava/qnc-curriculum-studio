@@ -230,6 +230,56 @@ class Settings(BaseSettings):
         le=10.0,
         description="Max quality score drop allowed during enrichment before abort.",
     )
+    
+    # Chat Mode (Quick Q&A) Settings
+    chat_mode_rag_limit: int = Field(
+        default=20,
+        ge=5,
+        le=50,
+        description="Number of RAG documents to retrieve for chat mode (higher for better coverage).",
+    )
+    chat_mode_similarity_threshold: float = Field(
+        default=0.6,
+        ge=0.0,
+        le=1.0,
+        description="Cosine similarity threshold for chat mode RAG retrieval.",
+    )
+    chat_mode_min_docs: int = Field(
+        default=10,
+        ge=1,
+        le=30,
+        description="Minimum RAG docs required to skip Tavily fallback in chat mode.",
+    )
+    chat_mode_history_limit: int = Field(
+        default=10,
+        ge=1,
+        le=20,
+        description="Maximum conversation history messages to maintain in chat mode.",
+    )
+    chat_mode_temperature: float = Field(
+        default=0.7,
+        ge=0.0,
+        le=1.0,
+        description="Temperature for chat mode generation (higher for conversational tone).",
+    )
+    
+    # Model Selection (configurable)
+    available_models: list[str] = Field(
+        default_factory=lambda: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "o1-preview"],
+        description="Available models for user selection in frontend.",
+    )
+    
+    # Self-Improving RAG Settings
+    enable_qa_storage: bool = Field(
+        default=True,
+        description="Enable automatic storage of high-quality Q&A pairs in vector database.",
+    )
+    qa_storage_min_quality: float = Field(
+        default=85.0,
+        ge=0.0,
+        le=100.0,
+        description="Minimum quality score required to store Q&A pair in vector database.",
+    )
 
     model_config = SettingsConfigDict(
         env_file=(".env", "config/settings.env"),

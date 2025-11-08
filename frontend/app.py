@@ -40,121 +40,65 @@ st.markdown(
 
 st.markdown("---")
 
-# Create 2-tab interface
-tab1, tab2 = st.tabs(["📄 Upload Materials", "💬 Generate Content"])
+# Welcome message
+st.markdown("### 🎯 Welcome to Curriculum Studio")
+st.markdown(
+    """
+    Your AI-powered assistant for creating high-quality Python curriculum content.
+    Choose your workflow below:
+    """
+)
 
-with tab1:
-    st.markdown("### 📤 Upload Learning Materials")
+st.markdown("---")
+
+# Dual-mode interface overview
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("### 💬 Chat Mode")
     st.markdown(
         """
-        Build your knowledge base by uploading Python learning materials.
-        The system will process and index them for curriculum generation.
+        **Quick Q&A for fast answers**
+        
+        Perfect for:
+        - Quick clarifications
+        - Code snippet explanations
+        - Syntax questions
+        - Troubleshooting help
+        
+        Features:
+        - ⚡ Fast responses (5-15s)
+        - 💾 Conversation history
+        - 🎯 RAG-first (20 docs)
+        - 🌐 Tavily fallback
         """
     )
     
-    # Quick navigation to upload page
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.info("📚 Upload PDF, Markdown, or JSON files to expand your knowledge base")
-    with col2:
-        if st.button("Go to Upload Page →", use_container_width=True, type="primary"):
-            st.switch_page("pages/1_📄_Upload.py")
-    
-    st.markdown("---")
-    
-    # Knowledge base status
-    st.markdown("#### 📊 Knowledge Base Status")
-    doc_count = len(st.session_state.get("documents", []))
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("📚 Total Documents", doc_count)
-    with col2:
-        st.metric("📝 Ready for Use", doc_count)
-    with col3:
-        st.metric("🔍 Searchable", "Yes" if doc_count > 0 else "No")
-    
-    st.markdown("---")
-    
-    # Features
-    st.markdown("#### ✨ What Happens After Upload")
-    feat_col1, feat_col2 = st.columns(2)
-    
-    with feat_col1:
-        st.markdown("""
-        **🔍 Intelligent Processing**
-        - Automatic text extraction
-        - Smart chunking for optimal retrieval
-        - Vector embedding generation
-        - Metadata preservation
-        """)
-    
-    with feat_col2:
-        st.markdown("""
-        **🎯 Quality-First Retrieval**
-        - Semantic similarity search
-        - Top 15 most relevant chunks
-        - Automatic web search fallback
-        - Citation tracking
-        """)
+    if st.button("💬 Start Chat →", use_container_width=True, type="secondary"):
+        st.switch_page("pages/2_🎯_Workspace.py")
 
-with tab2:
-    st.markdown("### 💬 Generate Curriculum Content")
+with col2:
+    st.markdown("### 📝 Generate Content")
     st.markdown(
         """
-        Ask questions about Python concepts and get high-quality, curriculum-ready content
-        with the PSW structure, real-world examples, and reflection questions.
+        **High-quality curriculum content**
+        
+        Perfect for:
+        - Lesson plans
+        - Learning materials
+        - In-depth explanations
+        - Production content
+        
+        Features:
+        - 📝 PSW structure
+        - 🎯 95+ quality threshold
+        - 📚 Comprehensive citations
+        - 📥 Markdown export
         """
     )
     
-    # Quick navigation to chat page
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.info("💡 Generate content with 95+ quality threshold and automatic compilation")
-    with col2:
-        if st.button("Go to Chat Page →", use_container_width=True, type="primary"):
-            st.switch_page("pages/2_💬_Chat.py")
-    
-    st.markdown("---")
-    
-    # Session stats
-    st.markdown("#### 📊 Current Session")
-    msg_count = len(st.session_state.get("messages", []))
-    quality_scores = st.session_state.get("quality_scores", [])
-    avg_quality = sum(quality_scores) / len(quality_scores) if quality_scores else 0
-    total_time = st.session_state.get("total_generation_time", 0)
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("💬 Questions Asked", msg_count // 2)
-    with col2:
-        st.metric("⭐ Average Quality", f"{avg_quality:.1f}/100" if avg_quality > 0 else "—")
-    with col3:
-        st.metric("⏱️ Total Time", f"{total_time // 60}m {total_time % 60}s" if total_time > 0 else "—")
-    
-    st.markdown("---")
-    
-    # Quality pipeline
-    st.markdown("#### 🎯 Quality-First Pipeline")
-    pipeline_col1, pipeline_col2 = st.columns(2)
-    
-    with pipeline_col1:
-        st.markdown("""
-        **📝 Content Generation**
-        - RAG retrieval (15 documents)
-        - Tavily web research (8 sources)
-        - Technical generation (95+ threshold)
-        - Up to 5 rewrites for quality
-        """)
-    
-    with pipeline_col2:
-        st.markdown("""
-        **✨ Technical Compilation**
-        - PSW structure (Problem-Solution-Win)
-        - Real-world examples integration
-        - Reflection questions
-        - Citation preservation (95+ threshold)
-        """)
+    if st.button("📝 Generate Content →", use_container_width=True, type="primary"):
+        st.switch_page("pages/2_🎯_Workspace.py")
 
 st.markdown("---")
 

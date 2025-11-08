@@ -18,6 +18,7 @@ from app.schemas.chat import (
     ChatResponse,
     Citation,
     EvaluationSummary,
+    QuickChatResponse,
     StreamEvent,
 )
 from app.security.dependencies import get_secret_store_dependency
@@ -178,6 +179,150 @@ async def chat_query(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Chat query failed: {str(e)}"
+        )
+
+
+@router.post("/quick-qa", response_model=QuickChatResponse, status_code=status.HTTP_200_OK)
+async def quick_qa(
+    request: ChatRequest,
+    session: AsyncSession = Depends(get_db_session),
+    secret_store: SecretStore = Depends(get_secret_store_dependency),
+) -> QuickChatResponse:
+    """
+    Quick Q&A endpoint for chat mode.
+    
+    Strategy:
+    1. RAG-first: Retrieve more documents (20 vs 15)
+    2. Check if RAG is sufficient (≥10 docs with good similarity)
+    3. If RAG sufficient: Generate answer from RAG only
+    4. If RAG insufficient: Fallback to Tavily + RAG
+    5. Maintain conversation context (last 10 messages)
+    6. No quality evaluation (fast response)
+    """
+    try:
+        from app.core.config import get_settings
+        from app.vectorstore.pgvector_store import PGVectorStore
+        from app.clients.embeddings import get_embedding_client
+        from app.graph.tavily_research import TavilyResearchClient
+        from app.providers.factory import get_chat_model
+        from langchain.schema import HumanMessage, SystemMessage, AIMessage
+        
+        settings = get_settings()
+        logger.info("quick_qa.start", question=request.question[:50])
+        
+        # 1. RAG Retrieval (higher limit for chat mode)
+        embedding_client = get_embedding_client()
+        vector_store = PGVectorStore(session=session, embedding_client=embedding_client)
+        
+        rag_docs = await vector_store.similarity_search(
+            query=request.question,
+            limit=settings.chat_mode_rag_limit,
+            max_distance=settings.chat_mode_similarity_threshold,
+        )
+        
+        logger.info("quick_qa.rag_retrieved", count=len(rag_docs))
+        
+        # 2. Check if RAG is sufficient
+        rag_sufficient = len(rag_docs) >= settings.chat_mode_min_docs
+        web_results = []
+        
+        if not rag_sufficient:
+            # 3. Fallback to Tavily
+            logger.info("quick_qa.tavily_fallback", rag_count=len(rag_docs))
+            if settings.tavily_api_key:
+                try:
+                    tavily_client = TavilyResearchClient(api_key=settings.tavily_api_key)
+                    web_results = await tavily_client.search_prioritized(
+                        query=request.question,
+                        depth="quick",
+                        max_results=5,
+                    )
+                    logger.info("quick_qa.tavily_retrieved", count=len(web_results))
+                except Exception as e:
+                    logger.warning("quick_qa.tavily_failed", error=str(e))
+        
+        # 4. Build context from sources
+        context_parts = []
+        
+        # Add RAG documents
+        for i, doc in enumerate(rag_docs, 1):
+            context_parts.append(f"[Source {i} - RAG Document]\n{doc.get('content', '')}\n")
+        
+        # Add web results if used
+        for i, result in enumerate(web_results, len(rag_docs) + 1):
+            context_parts.append(f"[Source {i} - Web]\n{result.get('content', '')}\n")
+        
+        context = "\n".join(context_parts)
+        
+        # 5. Build conversation history (last 10 messages)
+        history_limit = settings.chat_mode_history_limit
+        recent_history = request.history[-history_limit:] if len(request.history) > history_limit else request.history
+        
+        messages = []
+        
+        # System prompt for chat mode
+        system_prompt = """You are a helpful Python programming assistant.
+
+Your role is to provide clear, accurate, and concise answers to Python questions.
+
+Guidelines:
+- Be conversational and friendly
+- Provide code examples when helpful
+- Keep answers focused and practical
+- Use the provided sources to ensure accuracy
+- If you don't know something, say so
+
+Format your response in markdown with:
+- Clear explanations
+- Code blocks with ```python when showing code
+- Bullet points or numbered lists when appropriate
+"""
+        messages.append(SystemMessage(content=system_prompt))
+        
+        # Add conversation history
+        for turn in recent_history:
+            if turn.role == "user":
+                messages.append(HumanMessage(content=turn.content))
+            else:
+                messages.append(AIMessage(content=turn.content))
+        
+        # Add current question with context
+        user_message = f"""Question: {request.question}
+
+Available Sources:
+{context}
+
+Please answer the question using the provided sources. Be concise and practical."""
+        
+        messages.append(HumanMessage(content=user_message))
+        
+        # 6. Generate answer
+        model_name = request.model or settings.openai_chat_model
+        llm = get_chat_model(
+            provider=request.provider,
+            model=model_name,
+            temperature=settings.chat_mode_temperature,
+            secret_store=secret_store,
+            secret_token=request.secret_token,
+        )
+        
+        logger.info("quick_qa.generating", model=model_name, temperature=settings.chat_mode_temperature)
+        response = await llm.ainvoke(messages)
+        answer = response.content
+        
+        logger.info("quick_qa.success", answer_length=len(answer), sources=len(rag_docs) + len(web_results))
+        
+        return QuickChatResponse(
+            answer=answer,
+            sources_used=len(rag_docs) + len(web_results),
+            rag_only=rag_sufficient,
+        )
+        
+    except Exception as e:
+        logger.error("quick_qa.error", error=str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Quick Q&A failed: {str(e)}"
         )
 
 

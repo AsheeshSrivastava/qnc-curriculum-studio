@@ -76,15 +76,20 @@ class APIClient:
         secret_token: Optional[str] = None,
         history: Optional[list[dict[str, str]]] = None,
         stream: bool = False,
+        model: Optional[str] = None,
     ) -> dict[str, Any] | requests.Response:
-        """Send a chat query to the backend."""
+        """Send a chat query to the backend (Generate Content mode)."""
         try:
             payload = {
                 "question": question,
                 "provider": provider,
                 "secret_token": secret_token,
                 "history": history or [],
+                "mode": "generate",
             }
+            
+            if model:
+                payload["model"] = model
 
             if stream:
                 response = self.session.post(
@@ -109,6 +114,40 @@ class APIClient:
             raise Exception(f"Chat query failed: {error_detail}")
         except Exception as e:
             raise Exception(f"Chat error: {str(e)}")
+    
+    def quick_qa(
+        self,
+        question: str,
+        provider: str = "openai",
+        secret_token: Optional[str] = None,
+        history: Optional[list[dict[str, str]]] = None,
+        model: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Send a quick Q&A query to the backend (Chat mode)."""
+        try:
+            payload = {
+                "question": question,
+                "provider": provider,
+                "secret_token": secret_token,
+                "history": history or [],
+                "mode": "chat",
+            }
+            
+            if model:
+                payload["model"] = model
+
+            response = self.session.post(
+                f"{self.base_url}/api/chat/quick-qa",
+                json=payload,
+                timeout=60,  # 1 minute for quick responses
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            error_detail = e.response.json().get("detail", str(e)) if e.response else str(e)
+            raise Exception(f"Quick Q&A failed: {error_detail}")
+        except Exception as e:
+            raise Exception(f"Quick Q&A error: {str(e)}")
 
     def export_chat(
         self,
