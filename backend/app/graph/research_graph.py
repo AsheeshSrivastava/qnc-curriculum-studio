@@ -508,6 +508,8 @@ class ResearchGraph:
             "history": history or [],
             "provider": self.provider,
             "retry_count": 0,
+            "synthesis_retry_count": 0,
+            "structure_retry_count": 0,
         }
         return await self.graph.ainvoke(initial_state)
 
