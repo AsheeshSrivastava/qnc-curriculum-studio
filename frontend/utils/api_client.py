@@ -122,6 +122,7 @@ class APIClient:
         secret_token: Optional[str] = None,
         history: Optional[list[dict[str, str]]] = None,
         model: Optional[str] = None,
+        teaching_mode: str = "coach",
     ) -> dict[str, Any]:
         """Send a quick Q&A query to the backend (Chat mode)."""
         try:
@@ -131,6 +132,7 @@ class APIClient:
                 "secret_token": secret_token,
                 "history": history or [],
                 "mode": "chat",
+                "teaching_mode": teaching_mode,
             }
             
             if model:

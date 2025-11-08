@@ -12,8 +12,8 @@ from utils.session import add_message, clear_chat_history, get_chat_history, ini
 
 # Page config
 st.set_page_config(
-    page_title="Workspace - Curriculum Studio",
-    page_icon="🎯",
+    page_title="AXIS AI Chat - Curriculum Studio",
+    page_icon="🤖",
     layout="wide",
 )
 
@@ -38,23 +38,58 @@ st.markdown(
 st.markdown("---")
 
 # Create tabs for dual-mode interface
-tab1, tab2 = st.tabs(["💬 Chat (Quick Q&A)", "📝 Generate Content"])
+tab1, tab2 = st.tabs(["🤖 AXIS AI Chat", "📝 Generate Content"])
 
 # =============================================================================
 # TAB 1: CHAT MODE (Quick Q&A)
 # =============================================================================
 with tab1:
-    st.markdown("### 💬 Quick Q&A Chat")
+    st.markdown("### 🤖 AXIS AI Chat")
     st.markdown(
         """
-        Fast, conversational answers powered by your knowledge base.
-        **RAG-first** strategy with Tavily fallback for comprehensive coverage.
+        **Augmented eXpert Intelligent System** - Your AI teaching assistant.
+        Fast, conversational answers powered by your knowledge base with **RAG-first** strategy.
         """
     )
     
     # Initialize chat-specific session state
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = []
+    if "teaching_mode" not in st.session_state:
+        st.session_state.teaching_mode = "coach"
+    
+    # Teaching Mode Selector
+    st.markdown("#### 🎓 Teaching Mode")
+    mode_col1, mode_col2, mode_col3, mode_col4 = st.columns([1, 1, 1, 2])
+    
+    with mode_col1:
+        if st.button("🎯 Coach", key="mode_coach", use_container_width=True, 
+                     type="primary" if st.session_state.teaching_mode == "coach" else "secondary"):
+            st.session_state.teaching_mode = "coach"
+            st.rerun()
+    
+    with mode_col2:
+        if st.button("⚖️ Hybrid", key="mode_hybrid", use_container_width=True,
+                     type="primary" if st.session_state.teaching_mode == "hybrid" else "secondary"):
+            st.session_state.teaching_mode = "hybrid"
+            st.rerun()
+    
+    with mode_col3:
+        if st.button("🤔 Socratic", key="mode_socratic", use_container_width=True,
+                     type="primary" if st.session_state.teaching_mode == "socratic" else "secondary"):
+            st.session_state.teaching_mode = "socratic"
+            st.rerun()
+    
+    with mode_col4:
+        # Mode description
+        mode_descriptions = {
+            "coach": "📖 Direct explanations with examples",
+            "hybrid": "🔄 Balanced: Questions + Explanations",
+            "socratic": "💭 Guided discovery through questions"
+        }
+        st.caption(mode_descriptions.get(st.session_state.teaching_mode, ""))
+    
+    st.divider()
     
     # Chat controls
     col1, col2 = st.columns([3, 1])
@@ -124,6 +159,7 @@ with tab1:
                             model=selected_model,
                             secret_token=st.session_state.secret_tokens.get(provider),
                             history=history,
+                            teaching_mode=st.session_state.teaching_mode,
                         )
                     
                     answer = response.get("answer", "")

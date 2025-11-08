@@ -8,8 +8,8 @@ from utils.session import init_session_state
 
 # Page configuration
 st.set_page_config(
-    page_title="Quest and Crossfire™ - Curriculum Studio",
-    page_icon="🎓",
+    page_title="Home - Quest and Crossfire™",
+    page_icon="🏠",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
@@ -55,10 +55,10 @@ st.markdown("---")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown("### 💬 Chat Mode")
+    st.markdown("### 🤖 AXIS AI Chat")
     st.markdown(
         """
-        **Quick Q&A for fast answers**
+        **Augmented eXpert Intelligent System**
         
         Perfect for:
         - Quick clarifications
@@ -74,7 +74,7 @@ with col1:
         """
     )
     
-    if st.button("💬 Start Chat →", use_container_width=True, type="secondary"):
+    if st.button("🤖 Start AXIS AI →", use_container_width=True, type="secondary"):
         st.switch_page("pages/2_🎯_Workspace.py")
 
 with col2:
