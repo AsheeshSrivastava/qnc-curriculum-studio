@@ -282,12 +282,15 @@ class ResearchGraph:
         
         # Narrative Enrichment Agent (Agent 4)
         if self.settings.enable_narrative_enrichment:
+            logger.info("research_graph.init.agent_4_enabled", enable_narrative_enrichment=True)
             self.narrative_enrichment_agent = NarrativeEnrichmentAgent(
                 secret_store=self.secret_store,
                 provider=self.provider,
                 secret_token=self.secret_token,
             )
+            logger.info("research_graph.init.agent_4_initialized")
         else:
+            logger.warning("research_graph.init.agent_4_disabled", enable_narrative_enrichment=False)
             self.narrative_enrichment_agent = None
         
         # Multi-agent pipeline components
@@ -336,7 +339,9 @@ class ResearchGraph:
             
             # Agent 4: Narrative Enrichment (NEW)
             if self.settings.enable_narrative_enrichment:
+                logger.info("research_graph.build.adding_agent_4_node")
                 graph.add_node("agent_4_enrich", self._agent_4_enrich)
+                logger.info("research_graph.build.agent_4_node_added")
             
             # Pipeline flow
             graph.set_entry_point("research")
@@ -370,6 +375,7 @@ class ResearchGraph:
                 # Quality Gate 3: Compiler evaluation
                 if self.settings.enable_narrative_enrichment:
                     # If Agent 4 enabled, go to enrichment after compiler passes
+                    logger.info("research_graph.build.routing_compiler_to_agent_4")
                     graph.add_conditional_edges(
                         "evaluate_compiler",
                         self._compiler_decision,
@@ -377,6 +383,7 @@ class ResearchGraph:
                     )
                     graph.add_edge("recompile", "evaluate_compiler")
                     graph.add_edge("agent_4_enrich", END)
+                    logger.info("research_graph.build.agent_4_routing_complete")
                 else:
                     # No Agent 4, end after compiler
                     graph.add_conditional_edges(
