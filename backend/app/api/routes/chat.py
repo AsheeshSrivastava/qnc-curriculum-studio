@@ -330,7 +330,7 @@ Please answer the question using the provided sources. Be concise and practical.
         
         # 6. Generate answer
         model_name = request.model or settings.openai_chat_model
-        llm = get_chat_model(
+        llm = await get_chat_model(
             provider=request.provider,
             model=model_name,
             temperature=settings.chat_mode_temperature,
