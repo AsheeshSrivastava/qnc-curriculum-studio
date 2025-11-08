@@ -238,10 +238,13 @@ async def quick_qa(
         
         # 1. RAG Retrieval (higher limit for chat mode)
         embedding_client = get_embedding_client()
-        vector_store = PGVectorStore(session=session, embedding_client=embedding_client)
+        vector_store = PGVectorStore(session=session)
+        
+        # Generate embedding for the question
+        question_embedding = await embedding_client.embed_text(request.question)
         
         rag_docs = await vector_store.similarity_search(
-            query=request.question,
+            embedding=question_embedding,
             limit=settings.chat_mode_rag_limit,
             max_distance=settings.chat_mode_similarity_threshold,
         )
@@ -270,13 +273,15 @@ async def quick_qa(
         # 4. Build context from sources
         context_parts = []
         
-        # Add RAG documents
+        # Add RAG documents (RetrievalResult objects)
         for i, doc in enumerate(rag_docs, 1):
-            context_parts.append(f"[Source {i} - RAG Document]\n{doc.get('content', '')}\n")
+            content = doc.content if hasattr(doc, 'content') else str(doc)
+            context_parts.append(f"[Source {i} - RAG Document]\n{content}\n")
         
         # Add web results if used
         for i, result in enumerate(web_results, len(rag_docs) + 1):
-            context_parts.append(f"[Source {i} - Web]\n{result.get('content', '')}\n")
+            content = result.get('content', '') if isinstance(result, dict) else str(result)
+            context_parts.append(f"[Source {i} - Web]\n{content}\n")
         
         context = "\n".join(context_parts)
         
