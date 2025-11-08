@@ -61,7 +61,7 @@ class NarrativeEnrichmentAgent:
             prompt = self._build_prompt(compiled_content, question)
 
             # Get LLM
-            llm = get_chat_model(
+            llm = await get_chat_model(
                 provider=self.provider,
                 model=self.settings.openai_chat_model,
                 temperature=self.settings.narrative_temperature,
