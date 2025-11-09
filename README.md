@@ -1,6 +1,6 @@
-﻿# Quest and Crossfireâ„¢ Curriculum Studio
+# Quest and Crossfire™ Curriculum Studio
 
-> AI-Powered Curriculum Generation Engine for Aethelgard Academyâ„¢
+> AI-Powered Curriculum Generation Engine for Aethelgard Academy™
 
 [![License: BSL](https://img.shields.io/badge/License-BSL-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -11,7 +11,7 @@
 
 ## Overview
 
-Curriculum Studio is an enterprise-grade AI-powered system for generating high-quality, pedagogically sound Python curriculum content. Built as the engine powering Aethelgard Academyâ„¢, it combines multi-agent AI pipelines, adaptive teaching modes, and self-improving RAG to deliver curriculum-ready content with 95+ quality standards.
+Curriculum Studio is an enterprise-grade AI-powered system for generating high-quality, pedagogically sound Python curriculum content. Built as the engine powering Aethelgard Academy™, it combines multi-agent AI pipelines, adaptive teaching modes, and self-improving RAG to deliver curriculum-ready content with 95+ quality standards.
 
 **Status**: Beta (Production-Ready for Testing)
 
@@ -19,13 +19,13 @@ Curriculum Studio is an enterprise-grade AI-powered system for generating high-q
 
 ## Key Features
 
-### ðŸ¤– Multi-Agent Content Generation
-- **5-Agent Sequential Pipeline**: Research â†’ Synthesis â†’ Structure â†’ Compilation â†’ Narrative Enrichment
+### 🤖 Multi-Agent Content Generation
+- **5-Agent Sequential Pipeline**: Research → Synthesis → Structure → Compilation → Narrative Enrichment
 - **Quality Gates**: Automated validation at each stage (citations, code quality, structure)
 - **Retry Logic**: Intelligent fallback mechanisms for quality assurance
 - **GPT-5/O3 Integration**: Leverages cutting-edge LLMs for superior content quality
 
-### ðŸ’¬ AXIS AI Chat (Augmented Expert Intelligent System)
+### 💬 AXIS AI Chat (Augmented Expert Intelligent System)
 - **3 Teaching Modes**:
   - **Coach Mode**: Direct, practical teaching with code examples
   - **Hybrid Mode**: Balanced approach with guided exploration
@@ -34,13 +34,13 @@ Curriculum Studio is an enterprise-grade AI-powered system for generating high-q
 - **Tavily Fallback**: Web search integration for out-of-scope queries
 - **Conversation History**: Maintains context across sessions
 
-### ðŸ§  Self-Improving RAG
+### 🧠 Self-Improving RAG
 - **Q&A Vectorization**: Stores high-quality Q&A pairs back into the knowledge base
 - **Dual-Mode Learning**: Captures insights from both chat and content generation
 - **PostgreSQL + pgvector**: Scalable vector database for semantic search
 - **Quality Filtering**: Only stores Q&A pairs meeting quality thresholds
 
-### ðŸ” Multi-User Authentication
+### 🔐 Multi-User Authentication
 - **Role-Based Access Control**: Admin and User roles
 - **Admin Panel**: User management, usage statistics, and system monitoring
 - **Secure Storage**: Hashed passwords with secure session management
@@ -52,17 +52,17 @@ Curriculum Studio is an enterprise-grade AI-powered system for generating high-q
 ### Backend (FastAPI)
 ```
 research-portal/backend/
-â”œâ”€â”€ app/
-â”‚   â”œâ”€â”€ agents/              # 5-agent pipeline (Research, Synthesis, Structure, Compiler, Narrative)
-â”‚   â”œâ”€â”€ api/routes/          # REST endpoints (chat, generate, health)
-â”‚   â”œâ”€â”€ clients/             # OpenAI, Tavily integrations
-â”‚   â”œâ”€â”€ core/                # Configuration, logging, LangSmith tracing
-â”‚   â”œâ”€â”€ db/                  # PostgreSQL + pgvector setup
-â”‚   â”œâ”€â”€ schemas/             # Pydantic models
-â”‚   â”œâ”€â”€ services/            # RAG, Q&A storage, research graph
-â”‚   â””â”€â”€ vectorstore/         # Vector database operations
-â”œâ”€â”€ pyproject.toml           # Poetry dependencies
-â””â”€â”€ main.py                  # FastAPI app entry point
+├── app/
+│   ├── agents/              # 5-agent pipeline (Research, Synthesis, Structure, Compiler, Narrative)
+│   ├── api/routes/          # REST endpoints (chat, generate, health)
+│   ├── clients/             # OpenAI, Tavily integrations
+│   ├── core/                # Configuration, logging, LangSmith tracing
+│   ├── db/                  # PostgreSQL + pgvector setup
+│   ├── schemas/             # Pydantic models
+│   ├── services/            # RAG, Q&A storage, research graph
+│   └── vectorstore/         # Vector database operations
+├── pyproject.toml           # Poetry dependencies
+└── main.py                  # FastAPI app entry point
 ```
 
 **Key Technologies**:
@@ -77,15 +77,15 @@ research-portal/backend/
 ### Frontend (Streamlit)
 ```
 frontend/
-â”œâ”€â”€ pages/
-â”‚   â”œâ”€â”€ 2_ðŸŽ¯_Workspace.py   # AXIS AI Chat interface
-â”‚   â””â”€â”€ 3_ðŸ‘¤_Admin_Panel.py # User management (admin-only)
-â”œâ”€â”€ components/
-â”‚   â””â”€â”€ sidebar.py           # Navigation with user role display
-â”œâ”€â”€ utils/
-â”‚   â””â”€â”€ api_client.py        # Backend API communication
-â”œâ”€â”€ auth.py                  # Multi-user authentication
-â””â”€â”€ app.py                   # Main entry point (Home page)
+├── pages/
+│   ├── 2_🎯_Workspace.py   # AXIS AI Chat interface
+│   └── 3_👤_Admin_Panel.py # User management (admin-only)
+├── components/
+│   └── sidebar.py           # Navigation with user role display
+├── utils/
+│   └── api_client.py        # Backend API communication
+├── auth.py                  # Multi-user authentication
+└── app.py                   # Main entry point (Home page)
 ```
 
 **Key Technologies**:
@@ -247,7 +247,7 @@ streamlit run app.py
 
 ## Roadmap
 
-### Phase 1: Foundation (Completed âœ…)
+### Phase 1: Foundation (Completed ✅)
 - [x] Multi-agent content generation pipeline
 - [x] AXIS AI chat with 3 teaching modes
 - [x] Self-improving RAG with Q&A vectorization
@@ -296,7 +296,7 @@ streamlit run app.py
 - **Gate 1**: Minimum 6 citations from research
 - **Gate 2**: Code examples must execute successfully
 - **Gate 3**: Structured PSW framework validation
-- **Gate 4**: Compiler score â‰¥85/100
+- **Gate 4**: Compiler score ≥85/100
 
 ### RAG Strategy
 1. **Query Embedding**: Convert user query to vector (OpenAI embeddings)
@@ -307,7 +307,7 @@ streamlit run app.py
 6. **Storage**: Vectorize high-quality Q&A pairs for future retrieval
 
 ### Teaching Mode Prompts
-- **Coach Mode**: "Start EVERY response with a clear, direct answer (2-3 sentences max). ALWAYS include a working code example with inline comments. End with a ðŸ’¡ Pro Tip."
+- **Coach Mode**: "Start EVERY response with a clear, direct answer (2-3 sentences max). ALWAYS include a working code example with inline comments. End with a 💡 Pro Tip."
 - **Hybrid Mode**: "Balance direct explanation (40%) with guided discovery (60%). Use analogies and questions to build understanding."
 - **Socratic Mode**: "NEVER give direct answers. Ask 3-5 progressively deeper questions. Guide learners to discover solutions themselves."
 
@@ -317,8 +317,8 @@ streamlit run app.py
 
 **Business Source License 1.1**
 
-- **Licensor**: Quest and Crossfireâ„¢ (Asheesh Srivastava)
-- **Licensed Work**: Quest and Crossfireâ„¢ Curriculum Studio
+- **Licensor**: Quest and Crossfire™ (Asheesh Srivastava)
+- **Licensed Work**: Quest and Crossfire™ Curriculum Studio
 - **Additional Use Grant**: Non-commercial educational use permitted
 - **Change Date**: 2027-11-09
 - **Change License**: Apache License 2.0
@@ -331,8 +331,8 @@ See [LICENSE](LICENSE) for full terms.
 
 ## Trademarks
 
-- **QUEST AND CROSSFIREâ„¢** - Registered Trademark
-- **AETHELGARD ACADEMYâ„¢** - Registered Trademark
+- **QUEST AND CROSSFIRE™** - Registered Trademark
+- **AETHELGARD ACADEMY™** - Registered Trademark
 
 ---
 
@@ -340,7 +340,7 @@ See [LICENSE](LICENSE) for full terms.
 
 This is a proprietary project under the Business Source License. Contributions are welcome under the following terms:
 1. All contributions must align with the BSL 1.1 license
-2. Contributors grant Quest and Crossfireâ„¢ perpetual rights to their contributions
+2. Contributors grant Quest and Crossfire™ perpetual rights to their contributions
 3. No contributions may be used for commercial purposes until the Change Date (2027-11-09)
 
 For collaboration inquiries, contact: asheesh.srivastava@questandcrossfire.com
@@ -385,7 +385,7 @@ For collaboration inquiries, contact: asheesh.srivastava@questandcrossfire.com
 
 ---
 
-**â—‡ Where chaos becomes clarity. Small fixes, big clarity.**
+**◇ Where chaos becomes clarity. Small fixes, big clarity.**
 
 ---
 
