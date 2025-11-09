@@ -30,9 +30,13 @@ render_sidebar()
 st.markdown(
     """
     <div style='text-align: center; padding: 20px 0;'>
-        <h1 style='color: #2E5266; margin: 0;'>🎓 Curriculum Studio</h1>
+        <h1 style='color: #2E5266; margin: 0;'>
+            🎓 Curriculum Studio 
+            <span style='background: #D3A625; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.4em; margin-left: 10px; vertical-align: middle;'>BETA</span>
+        </h1>
         <p style='color: #6E8898; font-size: 1.2em; margin: 5px 0;'>Quest and Crossfire™ | Aethelgard Academy™</p>
         <p style='color: #D3A625; font-style: italic; margin: 5px 0;'>"Small Fixes, Big Clarity"</p>
+        <p style='color: #999; font-size: 0.9em; margin: 10px 0;'>⚠️ Beta Version - Testing Phase</p>
     </div>
     """,
     unsafe_allow_html=True,
