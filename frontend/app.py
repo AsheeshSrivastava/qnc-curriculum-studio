@@ -105,11 +105,12 @@ st.markdown("---")
 # Tips
 with st.expander("💡 Tips for Best Results"):
     st.markdown("""
-    **For Uploading:**
-    - Upload high-quality Python learning materials
-    - Include diverse sources (official docs, tutorials, guides)
-    - Markdown files work best for text content
-    - PDFs are processed automatically
+    **For AXIS AI Chat:**
+    - Ask clear, specific questions
+    - Use the teaching mode that fits your learning style
+    - Coach: Direct explanations with examples
+    - Hybrid: Questions + explanations
+    - Socratic: Discovery through questions
     
     **For Content Generation:**
     - Be specific in your questions
@@ -117,6 +118,8 @@ with st.expander("💡 Tips for Best Results"):
     - Review quality scores to ensure 95+ threshold
     - Download as Markdown for curriculum integration
     - Use Regenerate button if needed
+    
+    **Note:** The knowledge base is curated and maintained by administrators only.
     """)
 
 # Footer
