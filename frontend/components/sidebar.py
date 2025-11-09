@@ -123,7 +123,13 @@ def render_sidebar():
         # Logout button
         st.markdown("### 👤 Account")
         username = st.session_state.get("username", "User")
-        st.markdown(f"**Logged in as:** {username}")
+        user_role = st.session_state.get("user_role", "user")
+        
+        role_emoji = "👑" if user_role == "admin" else "👤"
+        role_label = "Admin" if user_role == "admin" else "User"
+        
+        st.markdown(f"**{role_emoji} {username}**")
+        st.markdown(f"*Role: {role_label}*")
         
         if st.button("🚪 Logout", use_container_width=True):
             logout()
