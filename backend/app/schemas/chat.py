@@ -30,6 +30,10 @@ class ChatRequest(BaseModel):
         default="generate",
         description="Mode: 'chat' for quick Q&A, 'generate' for full pipeline.",
     )
+    teaching_mode: Literal["coach", "hybrid", "socratic"] = Field(
+        default="coach",
+        description="AXIS teaching mode: 'coach' for direct guidance, 'hybrid' for balanced, 'socratic' for question-driven.",
+    )
 
 
 class Citation(BaseModel):

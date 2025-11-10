@@ -15,8 +15,18 @@ class Settings(BaseSettings):
     api_port: int = 8000
     log_level: str = "INFO"
     cors_origins: list[str] = Field(
-        default_factory=lambda: ["*"],
-        description="Allowed CORS origins for the API.",
+        default_factory=lambda: [
+            "*",  # Allow all during development
+            "http://localhost:5173",  # Aethelgard LMS v2 (Vite dev server)
+            "http://localhost:5174",  # Aethelgard LMS v2 (alternate port)
+            "http://localhost:5175",  # Aethelgard LMS v2 (alternate port)
+            "http://localhost:3000",  # Alternative frontend ports
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174",
+            "http://127.0.0.1:5175",
+            "http://127.0.0.1:3000",
+        ],
+        description="Allowed CORS origins for the API. Includes Aethelgard LMS frontends.",
     )
 
     default_provider: Literal["openai", "gemini", "openrouter"] = "openai"
@@ -30,7 +40,7 @@ class Settings(BaseSettings):
     google_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    openai_chat_model: str = "gpt-5"
+    openai_chat_model: str = "gpt-4o"
     gemini_chat_model: str = "models/gemini-1.5-flash-latest"
     openrouter_chat_model: str = "anthropic/claude-3-haiku:beta"
     langsmith_project: Optional[str] = None
@@ -233,22 +243,40 @@ class Settings(BaseSettings):
     
     # Chat Mode (Quick Q&A) Settings
     chat_mode_rag_limit: int = Field(
-        default=20,
+        default=10,
         ge=5,
         le=50,
-        description="Number of RAG documents to retrieve for chat mode (higher for better coverage).",
+        description="Number of RAG documents to retrieve for chat mode (prioritize RAG before Tavily).",
     )
     chat_mode_similarity_threshold: float = Field(
-        default=0.6,
+        default=0.4,
         ge=0.0,
         le=1.0,
         description="Cosine similarity threshold for chat mode RAG retrieval.",
     )
     chat_mode_min_docs: int = Field(
-        default=10,
+        default=5,
         ge=1,
         le=30,
         description="Minimum RAG docs required to skip Tavily fallback in chat mode.",
+    )
+    chat_mode_tavily_limit: int = Field(
+        default=2,
+        ge=0,
+        le=10,
+        description="Maximum Tavily web results to retrieve when RAG is insufficient in chat mode.",
+    )
+    chat_mode_chunk_char_limit: int = Field(
+        default=400,
+        ge=100,
+        le=1000,
+        description="Maximum characters per RAG chunk included in chat prompts.",
+    )
+    chat_mode_rag_context_limit: int = Field(
+        default=8,
+        ge=1,
+        le=20,
+        description="Maximum number of RAG documents to include in the chat prompt.",
     )
     chat_mode_history_limit: int = Field(
         default=10,
@@ -294,6 +322,16 @@ class Settings(BaseSettings):
         ge=0.0,
         le=100.0,
         description="Minimum quality score required to store Q&A pair in vector database.",
+    )
+    enable_response_cache: bool = Field(
+        default=False,
+        description="Enable Redis-backed response caching for chat mode.",
+    )
+    response_cache_ttl_seconds: int = Field(
+        default=300,
+        ge=30,
+        le=3600,
+        description="Time-to-live for cached chat responses.",
     )
 
     model_config = SettingsConfigDict(

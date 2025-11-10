@@ -232,10 +232,11 @@ async def quick_qa(
         from app.clients.embeddings import get_embedding_client
         from app.graph.tavily_research import TavilyResearchClient
         from app.providers.factory import get_chat_model
+        from app.services.teaching_modes import get_teaching_mode_prompt, get_teaching_mode_config
         from langchain.schema import HumanMessage, SystemMessage, AIMessage
-        
+
         settings = get_settings()
-        logger.info("quick_qa.start", question=request.question[:50])
+        logger.info("quick_qa.start", question=request.question[:50], teaching_mode=request.teaching_mode)
         
         # 1. RAG Retrieval (higher limit for chat mode)
         embedding_client = get_embedding_client()
@@ -292,24 +293,18 @@ async def quick_qa(
         recent_history = request.history[-history_limit:] if len(request.history) > history_limit else request.history
         
         messages = []
-        
-        # System prompt for chat mode
-        system_prompt = """You are a helpful Python programming assistant.
 
-Your role is to provide clear, accurate, and concise answers to Python questions.
+        # Get teaching mode configuration
+        mode_config = get_teaching_mode_config(request.teaching_mode)
+        system_prompt = get_teaching_mode_prompt(request.teaching_mode)
 
-Guidelines:
-- Be conversational and friendly
-- Provide code examples when helpful
-- Keep answers focused and practical
-- Use the provided sources to ensure accuracy
-- If you don't know something, say so
+        logger.info(
+            "quick_qa.teaching_mode",
+            mode=request.teaching_mode,
+            temperature=mode_config["temperature"],
+            description=mode_config["description"]
+        )
 
-Format your response in markdown with:
-- Clear explanations
-- Code blocks with ```python when showing code
-- Bullet points or numbered lists when appropriate
-"""
         messages.append(SystemMessage(content=system_prompt))
         
         # Add conversation history
@@ -329,17 +324,24 @@ Please answer the question using the provided sources. Be concise and practical.
         
         messages.append(HumanMessage(content=user_message))
         
-        # 6. Generate answer
+        # 6. Generate answer with teaching mode temperature
         model_name = request.model or settings.openai_chat_model
+        teaching_temperature = mode_config["temperature"]
+
         llm = await get_chat_model(
             provider=request.provider,
             model=model_name,
-            temperature=settings.chat_mode_temperature,
+            temperature=teaching_temperature,
             secret_store=secret_store,
             secret_token=request.secret_token,
         )
-        
-        logger.info("quick_qa.generating", model=model_name, temperature=settings.chat_mode_temperature)
+
+        logger.info(
+            "quick_qa.generating",
+            model=model_name,
+            temperature=teaching_temperature,
+            teaching_mode=request.teaching_mode
+        )
         response = await llm.ainvoke(messages)
         answer = response.content
         

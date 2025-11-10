@@ -58,36 +58,88 @@ with tab1:
     if "teaching_mode" not in st.session_state:
         st.session_state.teaching_mode = "coach"
     
-    # Teaching Mode Selector
+    # Teaching Mode Selector with Enhanced UI
     st.markdown("#### 🎓 Teaching Mode")
-    mode_col1, mode_col2, mode_col3, mode_col4 = st.columns([1, 1, 1, 2])
-    
+
+    # Mode configurations matching React frontend
+    mode_configs = {
+        "coach": {
+            "icon": "🎯",
+            "name": "Coach",
+            "short_desc": "📖 Direct explanations with examples",
+            "full_desc": "**Best for beginners.** Get direct, step-by-step guidance with clear code examples. Coach mode provides structured tutorials and straightforward answers.",
+            "color": "#06B6D4",  # Cyan-blue
+            "temperature": "0.7"
+        },
+        "hybrid": {
+            "icon": "⚖️",
+            "name": "Hybrid",
+            "short_desc": "🔄 Balanced: Questions + Explanations",
+            "full_desc": "**Best for intermediate learners.** Experience a mix of teaching and discovery. Hybrid mode balances explanations with thought-provoking questions.",
+            "color": "#A855F7",  # Purple-pink
+            "temperature": "0.9"
+        },
+        "socratic": {
+            "icon": "💡",
+            "name": "Socratic",
+            "short_desc": "💭 Guided discovery through questions",
+            "full_desc": "**Best for advanced learners.** Learn through question-driven exploration. Socratic mode asks probing questions to help you discover answers yourself.",
+            "color": "#F59E0B",  # Amber-orange
+            "temperature": "1.0"
+        }
+    }
+
+    # Mode selector buttons
+    mode_col1, mode_col2, mode_col3 = st.columns(3)
+
     with mode_col1:
-        if st.button("🎯 Coach", key="mode_coach", use_container_width=True, 
+        config = mode_configs["coach"]
+        if st.button(f"{config['icon']} {config['name']}", key="mode_coach", use_container_width=True,
                      type="primary" if st.session_state.teaching_mode == "coach" else "secondary"):
             st.session_state.teaching_mode = "coach"
+            st.toast(f"✅ Switched to {config['name']} Mode", icon="🎯")
             st.rerun()
-    
+
     with mode_col2:
-        if st.button("⚖️ Hybrid", key="mode_hybrid", use_container_width=True,
+        config = mode_configs["hybrid"]
+        if st.button(f"{config['icon']} {config['name']}", key="mode_hybrid", use_container_width=True,
                      type="primary" if st.session_state.teaching_mode == "hybrid" else "secondary"):
             st.session_state.teaching_mode = "hybrid"
+            st.toast(f"✅ Switched to {config['name']} Mode", icon="⚖️")
             st.rerun()
-    
+
     with mode_col3:
-        if st.button("🤔 Socratic", key="mode_socratic", use_container_width=True,
+        config = mode_configs["socratic"]
+        if st.button(f"{config['icon']} {config['name']}", key="mode_socratic", use_container_width=True,
                      type="primary" if st.session_state.teaching_mode == "socratic" else "secondary"):
             st.session_state.teaching_mode = "socratic"
+            st.toast(f"✅ Switched to {config['name']} Mode", icon="💡")
             st.rerun()
-    
-    with mode_col4:
-        # Mode description
-        mode_descriptions = {
-            "coach": "📖 Direct explanations with examples",
-            "hybrid": "🔄 Balanced: Questions + Explanations",
-            "socratic": "💭 Guided discovery through questions"
-        }
-        st.caption(mode_descriptions.get(st.session_state.teaching_mode, ""))
+
+    # Active mode indicator with colored badge
+    current_config = mode_configs[st.session_state.teaching_mode]
+    st.markdown(
+        f"""
+        <div style='background: linear-gradient(90deg, {current_config['color']}22, transparent);
+                    border-left: 4px solid {current_config['color']};
+                    padding: 12px;
+                    border-radius: 4px;
+                    margin: 10px 0;'>
+            <strong style='color: {current_config['color']};'>{current_config['icon']} Active: {current_config['name']} Mode</strong><br/>
+            <span style='color: #888; font-size: 0.9em;'>{current_config['short_desc']}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Expandable teaching mode guide
+    with st.expander("📚 Teaching Mode Guide - When to Use Each Mode"):
+        for mode_key, config in mode_configs.items():
+            st.markdown(f"### {config['icon']} {config['name']} Mode")
+            st.markdown(config['full_desc'])
+            st.caption(f"🌡️ Temperature: {config['temperature']} | Style: {config['short_desc']}")
+            if mode_key != "socratic":  # Don't add divider after last item
+                st.markdown("---")
     
     st.divider()
     
@@ -108,11 +160,11 @@ with tab1:
         for message in st.session_state.chat_messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
-                
-                # Show source info for assistant messages
+
+                # Show source info and teaching mode for assistant messages
                 if message["role"] == "assistant" and "metadata" in message:
                     metadata = message["metadata"]
-                    col1, col2, col3 = st.columns(3)
+                    col1, col2, col3, col4 = st.columns(4)
                     with col1:
                         st.caption(f"📚 Sources: {metadata.get('sources_used', 0)}")
                     with col2:
@@ -120,6 +172,11 @@ with tab1:
                         st.caption(f"🔍 {'RAG Only' if rag_only else 'RAG + Tavily'}")
                     with col3:
                         st.caption(f"⏱️ {metadata.get('time', 0)}s")
+                    with col4:
+                        # Show which teaching mode was used
+                        mode_used = metadata.get('teaching_mode', st.session_state.teaching_mode)
+                        mode_icon = mode_configs[mode_used]["icon"]
+                        st.caption(f"{mode_icon} {mode_used.title()}")
     
     # Chat input
     if chat_prompt := st.chat_input("Ask a quick question about Python...", key="chat_input"):
@@ -172,14 +229,18 @@ with tab1:
                     
                     # Display metadata
                     with metadata_placeholder.container():
-                        col1, col2, col3 = st.columns(3)
+                        col1, col2, col3, col4 = st.columns(4)
                         with col1:
                             st.caption(f"📚 Sources: {sources_used}")
                         with col2:
                             st.caption(f"🔍 {'RAG Only' if rag_only else 'RAG + Tavily'}")
                         with col3:
                             st.caption(f"⏱️ {generation_time}s")
-                    
+                        with col4:
+                            # Show teaching mode used for this response
+                            mode_icon = mode_configs[st.session_state.teaching_mode]["icon"]
+                            st.caption(f"{mode_icon} {st.session_state.teaching_mode.title()}")
+
                     # Add to history
                     st.session_state.chat_messages.append({
                         "role": "assistant",
@@ -188,6 +249,7 @@ with tab1:
                             "sources_used": sources_used,
                             "rag_only": rag_only,
                             "time": generation_time,
+                            "teaching_mode": st.session_state.teaching_mode,  # Store teaching mode
                         }
                     })
                     
@@ -204,14 +266,20 @@ with tab1:
         - Code snippet explanations
         - Syntax questions
         - Troubleshooting help
-        
+
         **Features:**
         - ⚡ Fast responses (5-15 seconds)
         - 💾 Remembers last 10 messages
         - 🎯 RAG-first (20 documents)
         - 🌐 Tavily fallback when needed
         - 🤖 Configurable model selection
-        
+        - 🎓 Three teaching modes for different learning styles
+
+        **Teaching Modes:**
+        - 🎯 **Coach Mode** - Best for beginners, direct explanations (temp: 0.7)
+        - ⚖️ **Hybrid Mode** - Best for intermediate, balanced approach (temp: 0.9)
+        - 💡 **Socratic Mode** - Best for advanced, question-driven (temp: 1.0)
+
         **Example Questions:**
         - "What's the difference between list and tuple?"
         - "How do I use enumerate()?"

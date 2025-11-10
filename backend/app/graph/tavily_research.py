@@ -1,5 +1,6 @@
 """Prioritized Tavily search for research-grade content retrieval."""
 
+import asyncio
 from typing import Any, Optional
 
 from tavily import TavilyClient
@@ -63,13 +64,20 @@ class TavilyResearchClient:
         # Determine search strategy based on depth
         if depth == "quick":
             # Quick: Official sources only
-            searches = [("tier_1", 5)]
+            searches = [("tier_1", min(5, max_results))]
         elif depth == "standard":
             # Standard: Official + Academic
-            searches = [("tier_1", 5), ("tier_2", 3)]
+            searches = [
+                ("tier_1", min(5, max_results)),
+                ("tier_2", max(0, min(3, max_results - 5))),
+            ]
         else:  # deep
             # Deep: All tiers
-            searches = [("tier_1", 5), ("tier_2", 3), ("tier_3", 5)]
+            searches = [
+                ("tier_1", min(5, max_results)),
+                ("tier_2", max(0, min(3, max_results - 5))),
+                ("tier_3", max(0, min(5, max_results - 8))),
+            ]
 
         # Execute prioritized searches
         for tier, limit in searches:
@@ -131,18 +139,20 @@ class TavilyResearchClient:
             List of search results with tier metadata
         """
         domains = PRIORITY_DOMAINS.get(tier, [])
-        if not domains:
+        if not domains or limit <= 0:
             return []
 
         # Use simple query with Tavily's native domain filtering
         # Don't duplicate site filters in query string (causes 400 errors)
         try:
-            # Execute Tavily search
-            response = self.client.search(
-                query=query,  # Use original query without site filters
-                max_results=limit,
-                search_depth="basic",  # Use basic search (advanced may not be available on all plans)
-                include_domains=domains,  # Restrict to priority domains
+            # Execute Tavily search without blocking the event loop
+            response = await asyncio.to_thread(
+                lambda: self.client.search(
+                    query=query,
+                    max_results=limit,
+                    search_depth="basic",  # Use basic search (advanced may not be available on all plans)
+                    include_domains=domains,
+                )
             )
 
             results = response.get("results", [])

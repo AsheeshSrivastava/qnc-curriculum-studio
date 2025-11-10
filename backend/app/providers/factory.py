@@ -97,12 +97,6 @@ async def get_chat_model(
     final_model = model or provider_settings.model
     final_temperature = temperature if temperature is not None else provider_settings.temperature
     
-    # GPT-5 and O3 models only support temperature=1.0
-    # Set to 1.0 for these models regardless of configuration
-    gpt5_o3_models = ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-5-codex", "o3-deep-research"]
-    if final_model in gpt5_o3_models:
-        final_temperature = 1.0
-
     if provider == "openai":
         return ChatOpenAI(
             model=final_model,
