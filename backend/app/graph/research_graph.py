@@ -20,7 +20,7 @@ from app.providers.factory import get_chat_model
 from app.quality.evaluator import QualityEvaluator
 from app.security.secret_store import SecretStore
 from app.vectorstore.pgvector_store import PGVectorStore
-from app.graph.narrative_enricher import NarrativeEnricher
+# from app.graph.narrative_enricher import NarrativeEnricher  # REMOVED: Not using Gemini
 from app.graph.question_classifier import QuestionClassifier
 from app.graph.tavily_research import TavilyResearchClient
 from app.graph.complexity_classifier import ComplexityClassifier
@@ -300,7 +300,7 @@ class ResearchGraph:
             self.cot_storyteller = CoTStoryteller()
             self.narrative_evaluator = NarrativeQualityEvaluator()
             self.aethelgard_evaluator = AethelgardQualityEvaluator()
-            self.narrative_enricher = NarrativeEnricher()  # Aethelgard polish agent
+            self.narrative_enricher = None  # REMOVED: Not using Gemini-based enricher
         else:
             # Legacy single-agent enrichment
             self.complexity_classifier = None
@@ -308,11 +308,7 @@ class ResearchGraph:
             self.cot_storyteller = None
             self.narrative_evaluator = None
             self.aethelgard_evaluator = None
-            self.narrative_enricher = (
-                NarrativeEnricher()
-                if self.settings.enable_narrative_enrichment
-                else None
-            )
+            self.narrative_enricher = None  # REMOVED: Not using Gemini-based enricher
         
         self.graph = self._build_graph()
 

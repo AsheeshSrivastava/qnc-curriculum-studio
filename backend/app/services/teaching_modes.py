@@ -18,16 +18,17 @@ class TeachingMode(str, Enum):
 
 
 # Teaching mode configurations with temperature and metadata
+# NOTE: GPT-5 requires temperature=1.0 (no other values supported)
 TEACHING_MODE_CONFIG: Dict[str, Dict[str, Any]] = {
     TeachingMode.COACH: {
-        "temperature": 0.7,
+        "temperature": 1.0,  # Changed from 0.7 for GPT-5 compatibility
         "description": "Direct, practical teaching with step-by-step guidance",
         "icon": "🎯",
         "color": "cyan",
         "name": "Coach Mode",
     },
     TeachingMode.HYBRID: {
-        "temperature": 0.9,
+        "temperature": 1.0,  # Changed from 0.9 for GPT-5 compatibility
         "description": "Balanced approach with guided exploration",
         "icon": "⚖️",
         "color": "purple",
