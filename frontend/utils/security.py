@@ -79,3 +79,6 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
     # This is just basic frontend validation
     return True, "Password is valid"
 
+
+
+

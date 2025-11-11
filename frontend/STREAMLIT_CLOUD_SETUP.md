@@ -47,13 +47,31 @@ BACKEND_URL = "https://your-backend-service.onrender.com"
 3. Copy the URL (e.g., `https://curriculum-studio-backend.onrender.com`)
 4. Replace `https://your-backend-service.onrender.com`
 
-### Step 5: Save and Redeploy
+### Step 5: Configure Supabase Auth URLs ⚠️ IMPORTANT
 
-1. Click **"Save"** in the secrets editor
+**Before testing, you MUST configure Site URL and Redirect URLs in Supabase:**
+
+1. Go to Supabase Dashboard → **Authentication → URL Configuration**
+2. Set **Site URL** to your Streamlit Cloud URL:
+   ```
+   https://your-app-name.streamlit.app
+   ```
+3. Add **Redirect URLs**:
+   ```
+   https://your-app-name.streamlit.app
+   https://your-app-name.streamlit.app/*
+   ```
+4. Click **"Save"**
+
+📖 **See `SUPABASE_AUTH_CONFIG.md` for detailed instructions.**
+
+### Step 6: Save and Redeploy
+
+1. Click **"Save"** in the Streamlit secrets editor
 2. Streamlit will automatically **redeploy** your app
 3. Wait for deployment to complete (usually 1-2 minutes)
 
-### Step 6: Test
+### Step 7: Test
 
 1. Open your Streamlit app URL
 2. You should see the **login page**
