@@ -128,18 +128,26 @@ def get_user_role(user_id: Optional[str] = None) -> str:
     """Get user's role from curriculum_studio_users table."""
     if user_id is None:
         user_id = st.session_state.get("user_id")
-    
+
     if not user_id:
         return ROLE_USER
-    
+
     try:
-        supabase = get_supabase_client()
-        response = supabase.table("curriculum_studio_users").select("role").eq("id", user_id).execute()
-        
+        supabase_admin = get_supabase_admin_client()
+        response = supabase_admin.table("curriculum_studio_users").select("role").eq("id", user_id).execute()
+
         if response.data and len(response.data) > 0:
-            return response.data[0].get("role", ROLE_USER)
+            role = response.data[0].get("role", ROLE_USER)
+            if DEBUG_AUTH:
+                st.session_state["_debug_last_role_lookup"] = {"user_id": user_id, "role": role}
+            return role
+
+        if DEBUG_AUTH:
+            st.session_state["_debug_last_role_lookup"] = {"user_id": user_id, "role": ROLE_USER, "reason": "no data"}
         return ROLE_USER
-    except Exception:
+    except Exception as exc:
+        if DEBUG_AUTH:
+            st.session_state["_debug_last_role_lookup"] = {"user_id": user_id, "role": ROLE_USER, "error": str(exc)}
         return ROLE_USER
 
 
@@ -377,6 +385,10 @@ def login_page():
             if st.session_state.get("_debug_last_signup_result"):
                 st.markdown("**Last signup response:**")
                 st.json(st.session_state.get("_debug_last_signup_result"))
+
+            if st.session_state.get("_debug_last_role_lookup"):
+                st.markdown("**Last role lookup:**")
+                st.json(st.session_state.get("_debug_last_role_lookup"))
 
 
 def logout():
