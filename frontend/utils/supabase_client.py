@@ -26,9 +26,11 @@ def _get_config_value(key: str, default: str = "") -> str:
     return os.getenv(key, default)
 
 
-@st.cache_resource
 def get_supabase_client() -> Client:
-    """Get cached Supabase client instance."""
+    """
+    Get Supabase client instance.
+    Creates a fresh client each time to avoid session conflicts between users.
+    """
     supabase_url = _get_config_value("SUPABASE_URL", "https://rqhpxwlsrgbxsqgpmolc.supabase.co")
     supabase_key = _get_config_value("SUPABASE_ANON_KEY", "")
     
