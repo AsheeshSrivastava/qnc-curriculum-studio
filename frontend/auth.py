@@ -15,49 +15,43 @@ def check_authentication() -> bool:
     Check if user is authenticated via Supabase session.
     Returns True if authenticated, False otherwise.
     """
-    # Initialize session state
-    if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
+    # Initialize session state - store the full session object
+    if "supabase_session" not in st.session_state:
+        st.session_state.supabase_session = None
     if "user_id" not in st.session_state:
         st.session_state.user_id = None
     if "user_email" not in st.session_state:
         st.session_state.user_email = None
     if "user_role" not in st.session_state:
         st.session_state.user_role = None
-    if "access_token" not in st.session_state:
-        st.session_state.access_token = None
-    if "refresh_token" not in st.session_state:
-        st.session_state.refresh_token = None
     
-    # Check Supabase session
     try:
         supabase = get_supabase_client()
         
-        # If we have tokens stored, restore the session
-        if st.session_state.access_token and st.session_state.refresh_token:
+        # If we have a stored session, try to restore it
+        if st.session_state.supabase_session:
             try:
+                # Restore session using stored access and refresh tokens
                 supabase.auth.set_session(
-                    st.session_state.access_token,
-                    st.session_state.refresh_token
+                    st.session_state.supabase_session.access_token,
+                    st.session_state.supabase_session.refresh_token
                 )
-            except Exception:
-                # Session restoration failed, clear tokens
-                st.session_state.access_token = None
-                st.session_state.refresh_token = None
+            except Exception as restore_error:
+                # Session restoration failed, clear it
+                st.session_state.supabase_session = None
         
-        # Now check if session is valid
-        session = supabase.auth.get_session()
+        # Get current session from Supabase
+        response = supabase.auth.get_session()
         
-        if session and session.session:
-            # Session exists, update session state
-            user = session.user
-            st.session_state.authenticated = True
+        if response and hasattr(response, 'session') and response.session:
+            # Valid session exists
+            session = response.session
+            user = response.user
+            
+            # Store session for persistence
+            st.session_state.supabase_session = session
             st.session_state.user_id = user.id
             st.session_state.user_email = user.email
-            
-            # Store tokens for persistence
-            st.session_state.access_token = session.session.access_token
-            st.session_state.refresh_token = session.session.refresh_token
             
             # Get user role from curriculum_studio_users table
             if st.session_state.user_role is None:
@@ -65,17 +59,19 @@ def check_authentication() -> bool:
             
             return True
         else:
-            # No session, clear state
-            st.session_state.authenticated = False
+            # No valid session, clear state
+            st.session_state.supabase_session = None
             st.session_state.user_id = None
             st.session_state.user_email = None
             st.session_state.user_role = None
-            st.session_state.access_token = None
-            st.session_state.refresh_token = None
             return False
+            
     except Exception as e:
-        # Error checking session, assume not authenticated
-        st.session_state.authenticated = False
+        # Error checking session, clear state and return False
+        st.session_state.supabase_session = None
+        st.session_state.user_id = None
+        st.session_state.user_email = None
+        st.session_state.user_role = None
         return False
 
 
@@ -160,13 +156,11 @@ def login_page():
                                 user = response.user
                                 session = response.session
                                 
-                                # Store session in Streamlit state
-                                st.session_state.authenticated = True
+                                # Store session object in Streamlit state
+                                st.session_state.supabase_session = session
                                 st.session_state.user_id = user.id
                                 st.session_state.user_email = user.email
                                 st.session_state.user_role = get_user_role(user.id)
-                                st.session_state.access_token = session.access_token
-                                st.session_state.refresh_token = session.refresh_token
                                 
                                 # Log login event
                                 log_security_event(user.id, "login", {"email": user.email})
@@ -239,12 +233,10 @@ def login_page():
                                 
                                 # If session exists (auto-login), store it
                                 if session:
-                                    st.session_state.authenticated = True
+                                    st.session_state.supabase_session = session
                                     st.session_state.user_id = user.id
                                     st.session_state.user_email = user.email
                                     st.session_state.user_role = get_user_role(user.id)
-                                    st.session_state.access_token = session.access_token
-                                    st.session_state.refresh_token = session.refresh_token
                                 
                                 # Log signup event
                                 log_security_event(user.id, "signup", {"email": user.email})
@@ -307,12 +299,10 @@ def logout():
         pass
     
     # Clear session state
-    st.session_state.authenticated = False
+    st.session_state.supabase_session = None
     st.session_state.user_id = None
     st.session_state.user_email = None
     st.session_state.user_role = None
-    st.session_state.access_token = None
-    st.session_state.refresh_token = None
     st.rerun()
 
 
