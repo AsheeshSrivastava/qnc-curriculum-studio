@@ -4,6 +4,20 @@ import streamlit as st
 from typing import Optional
 from utils.supabase_client import get_supabase_client, get_supabase_admin_client
 
+try:
+    DEBUG_AUTH = int(st.secrets.get("DEBUG_AUTH", 0))
+except Exception:
+    DEBUG_AUTH = 1 if st.secrets.get("DEBUG_AUTH", False) else 0
+
+
+def _mask_token(token: Optional[str]) -> Optional[str]:
+    if not token:
+        return None
+    token = str(token)
+    if len(token) <= 8:
+        return token
+    return f"{token[:4]}…{token[-4:]}"
+
 
 # User roles
 ROLE_ADMIN = "admin"
@@ -63,6 +77,16 @@ def check_authentication() -> bool:
             if st.session_state.user_role is None:
                 st.session_state.user_role = get_user_role(user.id)
 
+            if DEBUG_AUTH:
+                st.session_state._debug_latest_session_response = {
+                    "session_present": True,
+                    "user_id": getattr(user, "id", None),
+                    "user_email": getattr(user, "email", None),
+                    "session_expires_at": session.expires_at,
+                    "access_token_preview": _mask_token(session.access_token),
+                    "refresh_token_preview": _mask_token(session.refresh_token),
+                }
+
             return True
         else:
             # No valid session; clear stored state
@@ -72,9 +96,16 @@ def check_authentication() -> bool:
             st.session_state.user_id = None
             st.session_state.user_email = None
             st.session_state.user_role = None
+
+            if DEBUG_AUTH:
+                st.session_state._debug_latest_session_response = {
+                    "session_present": False,
+                    "reason": "Supabase returned no active session",
+                }
+
             return False
 
-    except Exception:
+    except Exception as exc:
         # On any error, clear auth state and treat as unauthenticated
         st.session_state.sb_access_token = None
         st.session_state.sb_refresh_token = None
@@ -82,6 +113,13 @@ def check_authentication() -> bool:
         st.session_state.user_id = None
         st.session_state.user_email = None
         st.session_state.user_role = None
+
+        if DEBUG_AUTH:
+            st.session_state._debug_latest_session_response = {
+                "session_present": False,
+                "reason": f"Exception: {exc}",
+            }
+
         return False
 
 
@@ -175,6 +213,15 @@ def login_page():
                                 st.session_state.user_email = user.email
                                 st.session_state.user_role = get_user_role(user.id)
 
+                                if DEBUG_AUTH:
+                                    st.session_state._debug_last_login_result = {
+                                        "user_id": user.id,
+                                        "user_email": user.email,
+                                        "access_token_preview": _mask_token(session.access_token),
+                                        "refresh_token_preview": _mask_token(session.refresh_token),
+                                        "expires_at": session.expires_at,
+                                    }
+
                                 # Log login event
                                 log_security_event(user.id, "login", {"email": user.email})
 
@@ -252,7 +299,16 @@ def login_page():
                                     st.session_state.user_id = user.id
                                     st.session_state.user_email = user.email
                                     st.session_state.user_role = get_user_role(user.id)
-                                
+
+                                    if DEBUG_AUTH:
+                                        st.session_state._debug_last_signup_result = {
+                                            "user_id": user.id,
+                                            "user_email": user.email,
+                                            "access_token_preview": _mask_token(session.access_token),
+                                            "refresh_token_preview": _mask_token(session.refresh_token),
+                                            "expires_at": session.expires_at,
+                                        }
+
                                 # Log signup event
                                 log_security_event(user.id, "signup", {"email": user.email})
                                 
@@ -297,6 +353,29 @@ def login_page():
             All passwords are securely hashed and stored by Supabase Auth.
             Never share your password.
             """)
+
+    if DEBUG_AUTH:
+        with st.expander("🔍 Auth Debug", expanded=DEBUG_AUTH >= 2):
+            st.markdown("**Stored tokens (Session State):**")
+            st.json({
+                "access_token": _mask_token(st.session_state.get("sb_access_token")),
+                "refresh_token": _mask_token(st.session_state.get("sb_refresh_token")),
+                "expires_at": st.session_state.get("sb_session_expires_at"),
+                "user_id": st.session_state.get("user_id"),
+                "user_email": st.session_state.get("user_email"),
+                "user_role": st.session_state.get("user_role"),
+            })
+
+            st.markdown("**Latest Supabase get_session():**")
+            st.json(st.session_state.get("_debug_latest_session_response", {}))
+
+            if st.session_state.get("_debug_last_login_result"):
+                st.markdown("**Last login response:**")
+                st.json(st.session_state.get("_debug_last_login_result"))
+
+            if st.session_state.get("_debug_last_signup_result"):
+                st.markdown("**Last signup response:**")
+                st.json(st.session_state.get("_debug_last_signup_result"))
 
 
 def logout():
