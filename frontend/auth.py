@@ -26,87 +26,89 @@ ROLE_USER = "user"
 
 def check_authentication() -> bool:
     """
-    Check if user is authenticated via Supabase session.
+    Check if user is authenticated via Supabase tokens we keep in session state.
     Returns True if authenticated, False otherwise.
     """
-    # Initialize session state for auth fields
-    if "sb_access_token" not in st.session_state:
-        st.session_state.sb_access_token = None
-    if "sb_refresh_token" not in st.session_state:
-        st.session_state.sb_refresh_token = None
-    if "sb_session_expires_at" not in st.session_state:
-        st.session_state.sb_session_expires_at = None
-    if "user_id" not in st.session_state:
-        st.session_state.user_id = None
-    if "user_email" not in st.session_state:
-        st.session_state.user_email = None
-    if "user_role" not in st.session_state:
-        st.session_state.user_role = None
+    # Ensure auth-related keys exist
+    for key in ("sb_access_token", "sb_refresh_token", "sb_session_expires_at", "user_id", "user_email", "user_role"):
+        st.session_state.setdefault(key, None)
 
     try:
         supabase = get_supabase_client()
+        debug_state = {
+            "attempted_with_access": bool(st.session_state.sb_access_token),
+            "attempted_with_refresh": bool(st.session_state.sb_refresh_token),
+        }
 
-        # If we have stored tokens, attempt to restore the session
+        # 1) Try current access token
         if st.session_state.sb_access_token:
             try:
-                supabase.auth.set_session(
-                    st.session_state.sb_access_token,
-                    st.session_state.sb_refresh_token or "",
-                )
-            except Exception:
-                # Session restoration failed, clear tokens
-                st.session_state.sb_access_token = None
-                st.session_state.sb_refresh_token = None
-                st.session_state.sb_session_expires_at = None
+                user_response = supabase.auth.get_user(st.session_state.sb_access_token)
+                if user_response and getattr(user_response, "user", None):
+                    user = user_response.user
+                    st.session_state.user_id = user.id
+                    st.session_state.user_email = user.email
+                    if st.session_state.user_role is None:
+                        st.session_state.user_role = get_user_role(user.id)
 
-        response = supabase.auth.get_session()
+                    debug_state.update({
+                        "auth_via": "access_token",
+                        "user_id": user.id,
+                        "user_email": user.email,
+                    })
+                    if DEBUG_AUTH:
+                        st.session_state._debug_latest_session_response = debug_state
+                    return True
+            except Exception as exc:
+                debug_state["access_token_error"] = str(exc)
 
-        if response and hasattr(response, "session") and response.session:
-            session = response.session
-            user = response.user
+        # 2) Attempt refresh using refresh token
+        if st.session_state.sb_refresh_token:
+            try:
+                refresh_response = supabase.auth.refresh_session(st.session_state.sb_refresh_token)
+                session = getattr(refresh_response, "session", None) if refresh_response else None
+                user = getattr(refresh_response, "user", None) if refresh_response else None
 
-            # Store session tokens for persistence across reruns
-            st.session_state.sb_access_token = session.access_token
-            st.session_state.sb_refresh_token = session.refresh_token
-            st.session_state.sb_session_expires_at = session.expires_at
+                if session and user:
+                    st.session_state.sb_access_token = session.access_token
+                    st.session_state.sb_refresh_token = session.refresh_token
+                    st.session_state.sb_session_expires_at = session.expires_at
+                    st.session_state.user_id = user.id
+                    st.session_state.user_email = user.email
+                    st.session_state.user_role = get_user_role(user.id)
 
-            st.session_state.user_id = user.id
-            st.session_state.user_email = user.email
+                    debug_state.update({
+                        "auth_via": "refresh_token",
+                        "user_id": user.id,
+                        "user_email": user.email,
+                        "access_token_preview": _mask_token(session.access_token),
+                        "refresh_token_preview": _mask_token(session.refresh_token),
+                        "expires_at": session.expires_at,
+                    })
+                    if DEBUG_AUTH:
+                        st.session_state._debug_latest_session_response = debug_state
+                    return True
+            except Exception as exc:
+                debug_state["refresh_token_error"] = str(exc)
 
-            # Load role if needed
-            if st.session_state.user_role is None:
-                st.session_state.user_role = get_user_role(user.id)
+        # 3) No valid session
+        st.session_state.sb_access_token = None
+        st.session_state.sb_refresh_token = None
+        st.session_state.sb_session_expires_at = None
+        st.session_state.user_id = None
+        st.session_state.user_email = None
+        st.session_state.user_role = None
 
-            if DEBUG_AUTH:
-                st.session_state._debug_latest_session_response = {
-                    "session_present": True,
-                    "user_id": getattr(user, "id", None),
-                    "user_email": getattr(user, "email", None),
-                    "session_expires_at": session.expires_at,
-                    "access_token_preview": _mask_token(session.access_token),
-                    "refresh_token_preview": _mask_token(session.refresh_token),
-                }
-
-            return True
-        else:
-            # No valid session; clear stored state
-            st.session_state.sb_access_token = None
-            st.session_state.sb_refresh_token = None
-            st.session_state.sb_session_expires_at = None
-            st.session_state.user_id = None
-            st.session_state.user_email = None
-            st.session_state.user_role = None
-
-            if DEBUG_AUTH:
-                st.session_state._debug_latest_session_response = {
-                    "session_present": False,
-                    "reason": "Supabase returned no active session",
-                }
-
-            return False
+        debug_state.update({
+            "session_present": False,
+            "reason": "No valid access or refresh token",
+        })
+        if DEBUG_AUTH:
+            st.session_state._debug_latest_session_response = debug_state
+        return False
 
     except Exception as exc:
-        # On any error, clear auth state and treat as unauthenticated
+        # Hard failure -> clear session
         st.session_state.sb_access_token = None
         st.session_state.sb_refresh_token = None
         st.session_state.sb_session_expires_at = None
@@ -119,7 +121,6 @@ def check_authentication() -> bool:
                 "session_present": False,
                 "reason": f"Exception: {exc}",
             }
-
         return False
 
 
