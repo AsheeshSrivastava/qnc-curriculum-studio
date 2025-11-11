@@ -39,6 +39,24 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = None
     google_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
+    
+    # Multi-Project Supabase Authentication
+    supabase_curriculum_url: Optional[str] = Field(
+        default=None,
+        description="Curriculum Studio Supabase project URL for JWT verification.",
+    )
+    supabase_curriculum_key: Optional[str] = Field(
+        default=None,
+        description="Curriculum Studio Supabase anon/public key for JWT verification.",
+    )
+    supabase_aethelgard_url: Optional[str] = Field(
+        default=None,
+        description="Aethelgard Academy Supabase project URL for JWT verification.",
+    )
+    supabase_aethelgard_key: Optional[str] = Field(
+        default=None,
+        description="Aethelgard Academy Supabase anon/public key for JWT verification.",
+    )
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openai_chat_model: str = "gpt-4o"
     gemini_chat_model: str = "models/gemini-1.5-flash-latest"

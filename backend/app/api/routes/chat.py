@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies import get_current_user
 from app.core.logging import get_logger
 from app.core.redis import get_redis
 from app.db.dependencies import get_db_session
@@ -106,6 +107,7 @@ async def chat_query(
     stream: bool = Query(False),
     session: AsyncSession = Depends(get_db_session),
     secret_store: SecretStore = Depends(get_secret_store_dependency),
+    current_user: dict = Depends(get_current_user),
 ) -> Response:
     try:
         logger.info("chat_query.start", question=request.question[:50], provider=request.provider)
@@ -217,6 +219,7 @@ async def quick_qa(
     request: ChatRequest,
     session: AsyncSession = Depends(get_db_session),
     secret_store: SecretStore = Depends(get_secret_store_dependency),
+    current_user: dict = Depends(get_current_user),
 ) -> QuickChatResponse:
     """
     Quick Q&A endpoint for chat mode.

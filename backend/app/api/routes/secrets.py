@@ -7,6 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.api.dependencies import get_current_user
 from app.core.logging import get_logger
 from app.providers.base import ProviderName
 from app.security.dependencies import get_secret_store_dependency
@@ -21,7 +22,7 @@ class StoreSecretRequest(BaseModel):
     """Request to store an API key securely."""
 
     provider: ProviderName
-    api_key: str = Field(..., min_length=10)
+    api_key: str = Field(..., min_length=10, max_length=500)
     ttl_seconds: Optional[int] = Field(default=3600, ge=60, le=86400)
 
 
@@ -37,6 +38,7 @@ class StoreSecretResponse(BaseModel):
 async def store_secret(
     request: StoreSecretRequest,
     secret_store: SecretStore = Depends(get_secret_store_dependency),
+    current_user: dict = Depends(get_current_user),
 ) -> StoreSecretResponse:
     """
     Store an API key securely and return a token.

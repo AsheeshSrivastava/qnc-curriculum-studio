@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies import get_current_user
 from app.db.dependencies import get_db_session
 from app.ingestion.parsers import DocumentParser
 from app.ingestion.service import DocumentIngestionService, get_ingestion_service
@@ -23,6 +24,7 @@ async def ingest_document(
     source_uri: str | None = Form(None),
     session: AsyncSession = Depends(get_db_session),
     ingestion_service: DocumentIngestionService = Depends(get_ingestion_service),
+    current_user: dict = Depends(get_current_user),
 ) -> IngestionResponse:
     """Upload a document (PDF/Markdown/JSON) for ingestion."""
 
@@ -46,6 +48,7 @@ async def ingest_document(
 async def list_documents(
     limit: int = 20,
     session: AsyncSession = Depends(get_db_session),
+    current_user: dict = Depends(get_current_user),
 ) -> list[DocumentSummary]:
     """Return recently ingested documents."""
 

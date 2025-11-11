@@ -24,6 +24,15 @@ class APIClient:
             except Exception:
                 self.base_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
         self.session = requests.Session()
+    
+    def set_auth_token(self, token: str):
+        """Set the JWT token for authenticated requests."""
+        self.session.headers.update({"Authorization": f"Bearer {token}"})
+    
+    def clear_auth_token(self):
+        """Clear the JWT token from session headers."""
+        if "Authorization" in self.session.headers:
+            del self.session.headers["Authorization"]
 
     def health_check(self) -> dict[str, Any]:
         """Check backend health status."""
@@ -217,8 +226,16 @@ class APIClient:
             raise Exception(f"API key storage error: {str(e)}")
 
 
-@st.cache_resource
 def get_api_client() -> APIClient:
-    """Get cached API client instance."""
-    return APIClient()
+    """
+    Get API client instance and configure with current user's auth token.
+    Not cached to ensure each request uses the current user's JWT token.
+    """
+    client = APIClient()
+    
+    # Set auth token from session state if available
+    if hasattr(st.session_state, "sb_access_token") and st.session_state.sb_access_token:
+        client.set_auth_token(st.session_state.sb_access_token)
+    
+    return client
 
