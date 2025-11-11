@@ -24,10 +24,28 @@ def check_authentication() -> bool:
         st.session_state.user_email = None
     if "user_role" not in st.session_state:
         st.session_state.user_role = None
+    if "access_token" not in st.session_state:
+        st.session_state.access_token = None
+    if "refresh_token" not in st.session_state:
+        st.session_state.refresh_token = None
     
     # Check Supabase session
     try:
         supabase = get_supabase_client()
+        
+        # If we have tokens stored, restore the session
+        if st.session_state.access_token and st.session_state.refresh_token:
+            try:
+                supabase.auth.set_session(
+                    st.session_state.access_token,
+                    st.session_state.refresh_token
+                )
+            except Exception:
+                # Session restoration failed, clear tokens
+                st.session_state.access_token = None
+                st.session_state.refresh_token = None
+        
+        # Now check if session is valid
         session = supabase.auth.get_session()
         
         if session and session.session:
@@ -36,6 +54,10 @@ def check_authentication() -> bool:
             st.session_state.authenticated = True
             st.session_state.user_id = user.id
             st.session_state.user_email = user.email
+            
+            # Store tokens for persistence
+            st.session_state.access_token = session.session.access_token
+            st.session_state.refresh_token = session.session.refresh_token
             
             # Get user role from curriculum_studio_users table
             if st.session_state.user_role is None:
@@ -48,6 +70,8 @@ def check_authentication() -> bool:
             st.session_state.user_id = None
             st.session_state.user_email = None
             st.session_state.user_role = None
+            st.session_state.access_token = None
+            st.session_state.refresh_token = None
             return False
     except Exception as e:
         # Error checking session, assume not authenticated
@@ -134,10 +158,15 @@ def login_page():
                             if response.user and response.session:
                                 # Successful login
                                 user = response.user
+                                session = response.session
+                                
+                                # Store session in Streamlit state
                                 st.session_state.authenticated = True
                                 st.session_state.user_id = user.id
                                 st.session_state.user_email = user.email
                                 st.session_state.user_role = get_user_role(user.id)
+                                st.session_state.access_token = session.access_token
+                                st.session_state.refresh_token = session.refresh_token
                                 
                                 # Log login event
                                 log_security_event(user.id, "login", {"email": user.email})
@@ -203,22 +232,35 @@ def login_page():
                             if response.user:
                                 # User created successfully
                                 user = response.user
+                                session = response.session
                                 
                                 # The database trigger will automatically create entry in curriculum_studio_users
                                 # with default role 'user'
+                                
+                                # If session exists (auto-login), store it
+                                if session:
+                                    st.session_state.authenticated = True
+                                    st.session_state.user_id = user.id
+                                    st.session_state.user_email = user.email
+                                    st.session_state.user_role = get_user_role(user.id)
+                                    st.session_state.access_token = session.access_token
+                                    st.session_state.refresh_token = session.refresh_token
                                 
                                 # Log signup event
                                 log_security_event(user.id, "signup", {"email": user.email})
                                 
                                 st.success(f"✅ Account created successfully for {signup_email}!")
-                                st.info("""
-                                **Next Steps:**
-                                1. Check your email for confirmation (if email confirmation is enabled)
-                                2. Sign in with your credentials
-                                3. Contact an administrator if you need Admin access
-                                """)
                                 
-                                # Switch to sign in tab
+                                if session:
+                                    st.info("✅ You are now logged in!")
+                                else:
+                                    st.info("""
+                                    **Next Steps:**
+                                    1. Check your email for confirmation (if email confirmation is enabled)
+                                    2. Sign in with your credentials
+                                    3. Contact an administrator if you need Admin access
+                                    """)
+                                
                                 st.rerun()
                             else:
                                 st.error("❌ Failed to create account")
@@ -269,6 +311,8 @@ def logout():
     st.session_state.user_id = None
     st.session_state.user_email = None
     st.session_state.user_role = None
+    st.session_state.access_token = None
+    st.session_state.refresh_token = None
     st.rerun()
 
 

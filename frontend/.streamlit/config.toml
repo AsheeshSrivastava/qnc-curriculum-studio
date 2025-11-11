@@ -1,0 +1,16 @@
+[server]
+# Headers to reduce console warnings (optional)
+enableXsrfProtection = true
+enableCORS = false
+
+[browser]
+# Reduce console noise (optional)
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#2E5266"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F3F4F6"
+textColor = "#1F2937"
+font = "sans serif"
+
