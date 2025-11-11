@@ -33,11 +33,11 @@ def check_authentication() -> bool:
         supabase = get_supabase_client()
 
         # If we have stored tokens, attempt to restore the session
-        if st.session_state.sb_access_token and st.session_state.sb_refresh_token:
+        if st.session_state.sb_access_token:
             try:
                 supabase.auth.set_session(
                     st.session_state.sb_access_token,
-                    st.session_state.sb_refresh_token,
+                    st.session_state.sb_refresh_token or "",
                 )
             except Exception:
                 # Session restoration failed, clear tokens
