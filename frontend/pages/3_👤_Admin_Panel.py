@@ -193,6 +193,19 @@ with tab2:
                     if user_response.user:
                         user_id = user_response.user.id
                         
+                        # Ensure entry exists in curriculum_studio_users table
+                        # (Trigger should create it, but we'll ensure it exists)
+                        try:
+                            # Try to insert (will fail silently if exists due to trigger)
+                            supabase_admin.table("curriculum_studio_users").insert({
+                                "id": user_id,
+                                "email": new_email,
+                                "role": new_role
+                            }).execute()
+                        except Exception:
+                            # Entry already exists (created by trigger), just update role
+                            pass
+                        
                         # Update role in curriculum_studio_users table
                         supabase_admin.table("curriculum_studio_users").update({
                             "role": new_role

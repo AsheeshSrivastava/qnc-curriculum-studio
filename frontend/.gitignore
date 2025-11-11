@@ -55,6 +55,9 @@ users.json
 # Test scripts
 test_*.py
 
+# Setup scripts with sensitive keys (should not be committed)
+setup_trigger_now.py
+
 
 
 

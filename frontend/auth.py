@@ -83,7 +83,7 @@ def is_admin(user_id: Optional[str] = None) -> bool:
 
 
 def login_page():
-    """Display login page with Supabase Auth."""
+    """Display login page with Supabase Auth - includes Sign In and Sign Up tabs."""
     # Center the login form
     col1, col2, col3 = st.columns([1, 2, 1])
     
@@ -108,46 +108,128 @@ def login_page():
         
         st.markdown("---")
         
-        # Login form
-        st.markdown("### 🔐 Login")
+        # Tabs for Sign In and Sign Up
+        tab1, tab2 = st.tabs(["🔐 Sign In", "📝 Sign Up"])
         
-        with st.form("login_form"):
-            email = st.text_input("Email", placeholder="Enter your email", type="default")
-            password = st.text_input("Password", type="password", placeholder="Enter your password")
-            submit = st.form_submit_button("Login", use_container_width=True, type="primary")
+        # Tab 1: Sign In
+        with tab1:
+            st.markdown("### 🔐 Sign In")
             
-            if submit:
-                if not email or not password:
-                    st.error("❌ Please enter both email and password")
-                else:
-                    try:
-                        supabase = get_supabase_client()
-                        response = supabase.auth.sign_in_with_password({
-                            "email": email,
-                            "password": password
-                        })
-                        
-                        if response.user and response.session:
-                            # Successful login
-                            user = response.user
-                            st.session_state.authenticated = True
-                            st.session_state.user_id = user.id
-                            st.session_state.user_email = user.email
-                            st.session_state.user_role = get_user_role(user.id)
+            with st.form("login_form"):
+                email = st.text_input("Email", placeholder="Enter your email", type="default")
+                password = st.text_input("Password", type="password", placeholder="Enter your password")
+                submit = st.form_submit_button("Sign In", use_container_width=True, type="primary")
+                
+                if submit:
+                    if not email or not password:
+                        st.error("❌ Please enter both email and password")
+                    else:
+                        try:
+                            supabase = get_supabase_client()
+                            response = supabase.auth.sign_in_with_password({
+                                "email": email,
+                                "password": password
+                            })
                             
-                            # Log login event
-                            log_security_event(user.id, "login", {"email": user.email})
+                            if response.user and response.session:
+                                # Successful login
+                                user = response.user
+                                st.session_state.authenticated = True
+                                st.session_state.user_id = user.id
+                                st.session_state.user_email = user.email
+                                st.session_state.user_role = get_user_role(user.id)
+                                
+                                # Log login event
+                                log_security_event(user.id, "login", {"email": user.email})
+                                
+                                st.success(f"✅ Welcome back, {user.email}!")
+                                st.rerun()
+                            else:
+                                st.error("❌ Invalid email or password")
+                        except Exception as e:
+                            error_msg = str(e)
+                            if "Invalid login credentials" in error_msg or "Email not confirmed" in error_msg:
+                                st.error("❌ Invalid email or password")
+                            else:
+                                st.error(f"❌ Login failed: {error_msg}")
+        
+        # Tab 2: Sign Up
+        with tab2:
+            st.markdown("### 📝 Create Account")
+            st.markdown("Register for a new account. You'll be assigned **User** role by default.")
+            
+            with st.form("signup_form"):
+                signup_email = st.text_input("Email", placeholder="Enter your email", key="signup_email")
+                signup_password = st.text_input(
+                    "Password", 
+                    type="password", 
+                    placeholder="Enter password (min 6 characters)",
+                    key="signup_password",
+                    help="Password must be at least 6 characters long"
+                )
+                signup_confirm_password = st.text_input(
+                    "Confirm Password",
+                    type="password",
+                    placeholder="Confirm your password",
+                    key="signup_confirm_password"
+                )
+                
+                st.markdown("""
+                <div style='background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin: 10px 0;'>
+                    <p style='margin: 0; font-size: 0.9em; color: #666;'>
+                        <strong>Note:</strong> New accounts are created with <strong>User</strong> role by default.
+                        Contact an administrator if you need <strong>Admin</strong> access.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                submit_signup = st.form_submit_button("Create Account", use_container_width=True, type="primary")
+                
+                if submit_signup:
+                    if not signup_email or not signup_password or not signup_confirm_password:
+                        st.error("❌ Please fill in all fields")
+                    elif signup_password != signup_confirm_password:
+                        st.error("❌ Passwords do not match")
+                    elif len(signup_password) < 6:
+                        st.error("❌ Password must be at least 6 characters long")
+                    else:
+                        try:
+                            supabase = get_supabase_client()
+                            response = supabase.auth.sign_up({
+                                "email": signup_email,
+                                "password": signup_password
+                            })
                             
-                            st.success(f"✅ Welcome back, {user.email}!")
-                            st.rerun()
-                        else:
-                            st.error("❌ Invalid email or password")
-                    except Exception as e:
-                        error_msg = str(e)
-                        if "Invalid login credentials" in error_msg or "Email not confirmed" in error_msg:
-                            st.error("❌ Invalid email or password")
-                        else:
-                            st.error(f"❌ Login failed: {error_msg}")
+                            if response.user:
+                                # User created successfully
+                                user = response.user
+                                
+                                # The database trigger will automatically create entry in curriculum_studio_users
+                                # with default role 'user'
+                                
+                                # Log signup event
+                                log_security_event(user.id, "signup", {"email": user.email})
+                                
+                                st.success(f"✅ Account created successfully for {signup_email}!")
+                                st.info("""
+                                **Next Steps:**
+                                1. Check your email for confirmation (if email confirmation is enabled)
+                                2. Sign in with your credentials
+                                3. Contact an administrator if you need Admin access
+                                """)
+                                
+                                # Switch to sign in tab
+                                st.rerun()
+                            else:
+                                st.error("❌ Failed to create account")
+                        except Exception as e:
+                            error_msg = str(e)
+                            if "already registered" in error_msg.lower() or "already exists" in error_msg.lower():
+                                st.error("❌ An account with this email already exists. Please sign in instead.")
+                            elif "password" in error_msg.lower():
+                                st.error("❌ Password does not meet requirements")
+                            else:
+                                st.error(f"❌ Sign up failed: {error_msg}")
         
         st.markdown("---")
         
@@ -155,7 +237,12 @@ def login_page():
         with st.expander("ℹ️ Need Help?"):
             st.markdown("""
             **For New Users:**
-            Contact the administrator to create an account for you.
+            - Use the **Sign Up** tab to create a new account
+            - New accounts are created with **User** role by default
+            - Contact an administrator if you need **Admin** access
+            
+            **For Existing Users:**
+            - Use the **Sign In** tab to access your account
             
             **Security Note:**
             All passwords are securely hashed and stored by Supabase Auth.
