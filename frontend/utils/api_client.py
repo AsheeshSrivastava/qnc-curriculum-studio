@@ -12,7 +12,17 @@ class APIClient:
 
     def __init__(self, base_url: Optional[str] = None):
         """Initialize API client with base URL."""
-        self.base_url = base_url or os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+        if base_url:
+            self.base_url = base_url
+        else:
+            # Try Streamlit secrets first (for Streamlit Cloud/local secrets.toml)
+            try:
+                if hasattr(st, "secrets") and "BACKEND_URL" in st.secrets:
+                    self.base_url = st.secrets["BACKEND_URL"]
+                else:
+                    self.base_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+            except Exception:
+                self.base_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
         self.session = requests.Session()
 
     def health_check(self) -> dict[str, Any]:

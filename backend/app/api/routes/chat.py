@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any, AsyncIterator, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -9,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
+from app.core.redis import get_redis
 from app.db.dependencies import get_db_session
 from app.graph.research_graph import ResearchGraph
 from app.graph.types import GraphState
@@ -237,61 +240,97 @@ async def quick_qa(
 
         settings = get_settings()
         logger.info("quick_qa.start", question=request.question[:50], teaching_mode=request.teaching_mode)
-        
-        # 1. RAG Retrieval (higher limit for chat mode)
+
+        # Prepare cache lookups (optional)
+        cache_client = None
+        cache_key = None
+        history_limit = settings.chat_mode_history_limit
+        recent_history = request.history[-history_limit:] if len(request.history) > history_limit else request.history
+
+        if settings.enable_response_cache:
+            cache_client = get_redis()
+            if cache_client is not None:
+                history_snapshot = [turn.model_dump() for turn in recent_history]
+                key_material = "|".join(
+                    [
+                        request.question.strip().lower(),
+                        json.dumps(history_snapshot, sort_keys=True),
+                        request.provider,
+                        (request.model or settings.openai_chat_model),
+                        request.teaching_mode,
+                    ]
+                )
+                cache_key = f"chat:qa:{hashlib.sha256(key_material.encode('utf-8')).hexdigest()}"
+                cached_raw = await cache_client.get(cache_key)
+                if cached_raw:
+                    try:
+                        if isinstance(cached_raw, bytes):
+                            cached_raw = cached_raw.decode("utf-8")
+                        cached_payload = json.loads(cached_raw)
+                        logger.info("quick_qa.cache_hit", cache_key=cache_key)
+                        return QuickChatResponse(**cached_payload)
+                    except json.JSONDecodeError as cache_error:
+                        logger.warning("quick_qa.cache_decode_failed", error=str(cache_error))
+
+        # 1. RAG Retrieval (prioritize knowledge base first)
         embedding_client = get_embedding_client()
         vector_store = PGVectorStore(session=session)
-        
-        # Generate embedding for the question (embed_documents returns list of embeddings)
+
         embeddings = await embedding_client.embed_documents([request.question])
         question_embedding = embeddings[0] if embeddings else []
-        
+
         rag_docs = await vector_store.similarity_search(
             embedding=question_embedding,
             limit=settings.chat_mode_rag_limit,
             max_distance=settings.chat_mode_similarity_threshold,
         )
-        
+
         logger.info("quick_qa.rag_retrieved", count=len(rag_docs))
-        
-        # 2. Check if RAG is sufficient
+
+        # Select top documents for prompt context
+        rag_prompt_docs = rag_docs[: settings.chat_mode_rag_context_limit]
+
+        # 2. Check if RAG is sufficient; fallback to Tavily only if needed
         rag_sufficient = len(rag_docs) >= settings.chat_mode_min_docs
         web_results = []
-        
-        if not rag_sufficient:
-            # 3. Fallback to Tavily
+
+        if not rag_sufficient and settings.tavily_api_key and settings.chat_mode_tavily_limit > 0:
             logger.info("quick_qa.tavily_fallback", rag_count=len(rag_docs))
-            if settings.tavily_api_key:
-                try:
-                    tavily_client = TavilyResearchClient(api_key=settings.tavily_api_key)
-                    web_results = await tavily_client.search_prioritized(
-                        query=request.question,
-                        depth="quick",
-                        max_results=5,
-                    )
-                    logger.info("quick_qa.tavily_retrieved", count=len(web_results))
-                except Exception as e:
-                    logger.warning("quick_qa.tavily_failed", error=str(e))
-        
-        # 4. Build context from sources
+            try:
+                tavily_client = TavilyResearchClient(api_key=settings.tavily_api_key)
+                web_results = await tavily_client.search_prioritized(
+                    query=request.question,
+                    depth="quick",
+                    max_results=settings.chat_mode_tavily_limit,
+                )
+                logger.info("quick_qa.tavily_retrieved", count=len(web_results))
+            except Exception as tavily_error:
+                logger.warning("quick_qa.tavily_failed", error=str(tavily_error))
+
+        # 3. Build context from sources with truncation
         context_parts = []
-        
-        # Add RAG documents (RetrievalResult objects)
-        for i, doc in enumerate(rag_docs, 1):
-            content = doc.content if hasattr(doc, 'content') else str(doc)
-            context_parts.append(f"[Source {i} - RAG Document]\n{content}\n")
-        
-        # Add web results if used
-        for i, result in enumerate(web_results, len(rag_docs) + 1):
-            content = result.get('content', '') if isinstance(result, dict) else str(result)
-            context_parts.append(f"[Source {i} - Web]\n{content}\n")
-        
+        chunk_limit = settings.chat_mode_chunk_char_limit
+
+        for i, doc in enumerate(rag_prompt_docs, 1):
+            content = doc.content if hasattr(doc, "content") else str(doc)
+            trimmed_content = content[:chunk_limit]
+            if len(content) > chunk_limit:
+                trimmed_content = f"{trimmed_content.rstrip()}..."
+            context_parts.append(f"[Source {i} - RAG Document]\n{trimmed_content}\n")
+
+        for i, result in enumerate(web_results, len(rag_prompt_docs) + 1):
+            content = ""
+            if isinstance(result, dict):
+                content = result.get("content") or result.get("summary") or result.get("snippet") or ""
+            else:
+                content = str(result)
+            trimmed_content = content[:chunk_limit]
+            if len(content) > chunk_limit:
+                trimmed_content = f"{trimmed_content.rstrip()}..."
+            context_parts.append(f"[Source {i} - Web]\n{trimmed_content}\n")
+
         context = "\n".join(context_parts)
-        
-        # 5. Build conversation history (last 10 messages)
-        history_limit = settings.chat_mode_history_limit
-        recent_history = request.history[-history_limit:] if len(request.history) > history_limit else request.history
-        
+
         messages = []
 
         # Get teaching mode configuration
@@ -302,18 +341,18 @@ async def quick_qa(
             "quick_qa.teaching_mode",
             mode=request.teaching_mode,
             temperature=mode_config["temperature"],
-            description=mode_config["description"]
+            description=mode_config["description"],
         )
 
         messages.append(SystemMessage(content=system_prompt))
-        
+
         # Add conversation history
         for turn in recent_history:
             if turn.role == "user":
                 messages.append(HumanMessage(content=turn.content))
             else:
                 messages.append(AIMessage(content=turn.content))
-        
+
         # Add current question with context
         user_message = f"""Question: {request.question}
 
@@ -321,10 +360,10 @@ Available Sources:
 {context}
 
 Please answer the question using the provided sources. Be concise and practical."""
-        
+
         messages.append(HumanMessage(content=user_message))
-        
-        # 6. Generate answer with teaching mode temperature
+
+        # 4. Generate answer with teaching mode temperature
         model_name = request.model or settings.openai_chat_model
         teaching_temperature = mode_config["temperature"]
 
@@ -340,24 +379,44 @@ Please answer the question using the provided sources. Be concise and practical.
             "quick_qa.generating",
             model=model_name,
             temperature=teaching_temperature,
-            teaching_mode=request.teaching_mode
+            teaching_mode=request.teaching_mode,
         )
         response = await llm.ainvoke(messages)
         answer = response.content
-        
-        logger.info("quick_qa.success", answer_length=len(answer), sources=len(rag_docs) + len(web_results))
-        
-        return QuickChatResponse(
-            answer=answer,
-            sources_used=len(rag_docs) + len(web_results),
-            rag_only=rag_sufficient,
+
+        sources_in_prompt = len(rag_prompt_docs) + len(web_results)
+
+        logger.info(
+            "quick_qa.success",
+            answer_length=len(answer),
+            sources=sources_in_prompt,
+            rag_only=rag_sufficient and not web_results,
         )
-        
+
+        quick_response = QuickChatResponse(
+            answer=answer,
+            sources_used=sources_in_prompt,
+            rag_only=rag_sufficient and not web_results,
+        )
+
+        if cache_client is not None and cache_key:
+            try:
+                await cache_client.set(
+                    cache_key,
+                    quick_response.model_dump_json(),
+                    ex=settings.response_cache_ttl_seconds,
+                )
+                logger.info("quick_qa.cache_store", cache_key=cache_key, ttl=settings.response_cache_ttl_seconds)
+            except Exception as cache_store_error:
+                logger.warning("quick_qa.cache_store_failed", error=str(cache_store_error))
+
+        return quick_response
+
     except Exception as e:
         logger.error("quick_qa.error", error=str(e), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Quick Q&A failed: {str(e)}"
+            detail=f"Quick Q&A failed: {str(e)}",
         )
 
 

@@ -23,19 +23,9 @@ def init_session_state():
     if "provider" not in st.session_state:
         st.session_state.provider = "openai"
 
-    if "api_keys" not in st.session_state:
-        st.session_state.api_keys = {
-            "openai": None,
-            "gemini": None,
-            "openrouter": None,
-        }
-
-    if "secret_tokens" not in st.session_state:
-        st.session_state.secret_tokens = {
-            "openai": None,
-            "gemini": None,
-            "openrouter": None,
-        }
+    # Note: API keys are now stored securely in backend/Supabase Vault
+    # Frontend should not store API keys in session state
+    # Secret tokens are retrieved from backend when needed
 
     # Document library
     if "documents" not in st.session_state:

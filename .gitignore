@@ -114,3 +114,9 @@ backend/Python database/
 
 # Personal learning log (not for public)
 LEARNING_LOG.md
+
+# Deployment guide (may contain sensitive deployment info)
+DEPLOYMENT_GUIDE.md
+
+# Archive folder (archived documentation and non-essential files)
+archive/

@@ -210,11 +210,13 @@ with tab1:
                             for msg in st.session_state.chat_messages[-11:-1]  # Last 10 messages (excluding current)
                         ]
                         
+                        # API keys are managed by backend/Supabase Vault
+                        # Frontend doesn't need to pass secret tokens
                         response = api_client.quick_qa(
                             question=chat_prompt,
                             provider=provider,
                             model=selected_model,
-                            secret_token=st.session_state.secret_tokens.get(provider),
+                            secret_token=None,  # Backend retrieves from Supabase Vault
                             history=history,
                             teaching_mode=st.session_state.teaching_mode,
                         )
@@ -357,11 +359,13 @@ with tab2:
                             for msg in st.session_state.generate_messages[:-1]
                         ]
                         
+                        # API keys are managed by backend/Supabase Vault
+                        # Frontend doesn't need to pass secret tokens
                         response = api_client.chat_query(
                             question=generate_prompt,
                             provider=provider,
                             model=selected_model,
-                            secret_token=st.session_state.secret_tokens.get(provider),
+                            secret_token=None,  # Backend retrieves from Supabase Vault
                             history=history,
                             stream=False,
                         )

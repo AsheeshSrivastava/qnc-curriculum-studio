@@ -49,6 +49,9 @@ Thumbs.db
 *.tmp
 *.bak
 
+# User database (no longer used, but keep in gitignore)
+users.json
+
 
 
 
