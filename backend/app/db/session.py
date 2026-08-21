@@ -59,7 +59,7 @@ class Database:
             pool_pre_ping=True,
         )
 
-        logger.info("database.configured", async_url=async_url)
+        logger.info("database.configured")
 
     @property
     def async_engine(self) -> AsyncEngine:

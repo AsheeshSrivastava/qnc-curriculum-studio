@@ -5,6 +5,7 @@ from __future__ import annotations
 from sqlalchemy import text
 
 from app.core.logging import get_logger
+from app.db import models  # noqa: F401
 from app.db.base import metadata
 from app.db.session import database
 
