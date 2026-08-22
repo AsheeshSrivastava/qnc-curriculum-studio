@@ -143,73 +143,109 @@ cd qnc-curriculum-studio
 
 #### 2. Backend Setup
 ```bash
-cd research-portal/backend
+cd backend
 
-# Install Poetry (if not installed)
-curl -sSL https://install.python-poetry.org | python3 -
+# Create/sync the Python 3.11 environment from the lockfile
+uv sync --frozen
 
-# Install dependencies
-poetry install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your API keys:
+# Configure local environment values in:
+# backend/config/settings.env
+#
+# Minimum local values:
+# - DATABASE_URL
+# - SUPABASE_CURRICULUM_URL
+# - SUPABASE_CURRICULUM_KEY
 # - OPENAI_API_KEY
-# - TAVILY_API_KEY
-# - LANGSMITH_API_KEY (optional)
-# - DATABASE_URL (PostgreSQL connection string)
-
-# Run database migrations
-poetry run alembic upgrade head
+# - SECRET_ENCRYPTION_KEY
 
 # Start backend server
-poetry run uvicorn app.main:app --reload --port 8000
+uv run python run_server.py
 ```
 
 #### 3. Frontend Setup
 ```bash
-cd ../../frontend
+cd frontend
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# Create frontend virtual environment
+uv venv --python 3.11.14
 
 # Install dependencies
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 
-# Set up Streamlit secrets
-mkdir -p .streamlit
-cat > .streamlit/secrets.toml << EOF
-BACKEND_URL = "http://localhost:8000"
-EOF
+```
 
+##### create:
+frontend/.streamlit/secrets.toml
+
+with:
+
+```toml
+SUPABASE_URL = "https://your-project.supabase.co"
+SUPABASE_ANON_KEY = "your-publishable-key"
+BACKEND_URL = "http://127.0.0.1:8000"
+
+```
+##### Then start Streamlit:
+
+``` bash
 # Start frontend
-streamlit run app.py
+uv run streamlit run app.py
+
 ```
 
 #### 4. Access Application
-- **Frontend**: http://localhost:8501
-- **Backend API Docs**: http://localhost:8000/docs
+- Frontend: http://localhost:8501
+- Backend API Docs: http://127.0.0.1:8000/docs
+- Backend Health: http://127.0.0.1:8000/api/health
 
 ---
 
 ## Deployment
 
 ### Backend (Render.com)
-- **Service Type**: Web Service
-- **Build Command**: `cd research-portal/backend && pip install poetry && poetry install`
-- **Start Command**: `cd research-portal/backend && poetry run uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- **Environment Variables**: Set `OPENAI_API_KEY`, `TAVILY_API_KEY`, `LANGSMITH_API_KEY`, `DATABASE_URL`, `ENABLE_NARRATIVE_ENRICHMENT=true`
+- Service Type: Web Service
+- Root Directory: backend
+- Build Command: uv sync --frozen
+- Start Command: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+- Health Check Path: /api/health
+
+#### Minimum environment variables:
+
+```
+APP_ENV=production
+DATABASE_URL
+SUPABASE_CURRICULUM_URL
+SUPABASE_CURRICULUM_KEY
+OPENAI_API_KEY
+SECRET_ENCRYPTION_KEY
+ENABLE_NARRATIVE_ENRICHMENT=false
+CORS_ORIGINS=["https://your-streamlit-app.streamlit.app"]
+
+# Do not commit secret values to Git.
+
+```
 
 ### Frontend (Streamlit Cloud)
-- **Main File**: `frontend/app.py`
-- **Python Version**: 3.11
-- **Secrets**: Add `BACKEND_URL` in Streamlit Cloud dashboard
+- Repository: this GitHub repository
+- Branch: master
+- Main File: frontend/app.py
+- Python Version: 3.11
 
-### Database (Render.com PostgreSQL)
-- **Plan**: Starter or higher (for pgvector support)
-- **Extensions**: Enable `vector` extension after creation
-- **Connection String**: Add to backend's `DATABASE_URL` environment variable
+#### Required Streamlit secrets:
+
+```
+SUPABASE_URL = "https://your-project.supabase.co"
+SUPABASE_ANON_KEY = "your-publishable-key"
+BACKEND_URL = "https://your-render-service.onrender.com"
+
+```
+
+### Database (Supabase PostgreSQL)
+
+- Supabase PostgreSQL is used as the production database.
+- Enable the vector extension for pgvector support.
+- Use the Supabase PostgreSQL connection string in DATABASE_URL.
+- Keep database credentials only in local ignored config files or deployment secret stores.
 
 ---
 
@@ -360,7 +396,7 @@ For collaboration inquiries, contact: asheesh.srivastava@questandcrossfire.com
 ## Contact
 
 **Asheesh Ranjan Srivastava**
-- **Email**: asheesh.srivastava@questandcrossfire.com
+- **Email**: asheeshsrivastava9@gmail.com
 - **GitHub**: [@AsheeshSrivastava](https://github.com/AsheeshSrivastava)
 - **LinkedIn**: [asheesh-ranjan-srivastava](https://www.linkedin.com/in/asheesh-ranjan-srivastava/)
 
