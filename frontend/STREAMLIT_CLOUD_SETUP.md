@@ -23,12 +23,13 @@ Copy and paste this into the secrets editor:
 
 ```toml
 # Supabase Configuration
-SUPABASE_URL = "https://rqhpxwlsrgbxsqgpmolc.supabase.co"
-SUPABASE_ANON_KEY = "paste_your_anon_key_here"
-SUPABASE_SERVICE_ROLE_KEY = "paste_your_service_role_key_here"
+SUPABASE_URL = "https://your-project-ref.supabase.co"
+SUPABASE_ANON_KEY = "your_supabase_anon_or_publishable_key"
+SUPABASE_SERVICE_ROLE_KEY = "your_service_role_key"
 
 # Backend API Configuration (Your Render URL)
-BACKEND_URL = "https://your-backend-service.onrender.com"
+BACKEND_URL = "https://your-render-backend.onrender.com"
+
 ```
 
 ### Step 4: Get Your Keys
@@ -137,10 +138,10 @@ After creating the user, set admin role:
 Your secrets should look exactly like this (with your actual values):
 
 ```toml
-SUPABASE_URL = "https://rqhpxwlsrgbxsqgpmolc.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxaHB4d2xzcmdieHNxZ3Btb2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4NzQ2MzMsImV4cCI6MjA3ODQ1MDYzM30.example"
-SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxaHB4d2xzcmdieHNxZ3Btb2xjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Mjg3NDYzMywiZXhwIjoyMDc4NDUwNjMzfQ.example"
-BACKEND_URL = "https://curriculum-studio-backend.onrender.com"
+SUPABASE_URL = "https://your-project-ref.supabase.co"
+SUPABASE_ANON_KEY = "your_supabase_anon_or_publishable_key"
+SUPABASE_SERVICE_ROLE_KEY = "your_service_role_key"
+BACKEND_URL = "https://your-render-backend.onrender.com"
 ```
 
 **Important:** 
