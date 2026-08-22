@@ -424,7 +424,10 @@ Please answer the question using the provided sources. Be concise and practical.
 
 
 @router.post("/export")
-async def export_response(payload: ChatExportRequest) -> Response:
+async def export_response(
+    payload: ChatExportRequest,
+    current_user: dict = Depends(get_current_user),
+) -> Response:
     filename_base = "research-response"
     if payload.format == "markdown":
         content = render_markdown(payload.answer, payload.citations, payload.evaluation)
