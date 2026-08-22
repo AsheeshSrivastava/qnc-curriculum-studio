@@ -6,7 +6,6 @@ import time
 import fakeredis.aioredis
 import pytest
 
-from app.core.config import get_settings
 from app.security.crypto import EnvelopeCipher
 from app.security.secret_store import SecretStore
 
@@ -21,7 +20,6 @@ async def test_store_and_retrieve_secret(monkeypatch):
     key = _random_key()
     monkeypatch.setenv("SECRET_ENCRYPTION_KEY", key)
     monkeypatch.setenv("SECRET_TTL_SECONDS", "120")
-    get_settings.cache_clear()
 
     store = SecretStore(redis_client=redis_client, cipher=EnvelopeCipher.from_config(), default_ttl=120)
 
@@ -45,7 +43,6 @@ async def test_extend_secret(monkeypatch):
     key = _random_key()
     monkeypatch.setenv("SECRET_ENCRYPTION_KEY", key)
     monkeypatch.setenv("SECRET_TTL_SECONDS", "60")
-    get_settings.cache_clear()
 
     store = SecretStore(redis_client=redis_client, cipher=EnvelopeCipher.from_config(), default_ttl=60)
 
