@@ -83,6 +83,8 @@ Examples: variable naming, indentation rules, input types, common syntax errors
 **Next Tiny Step**: (exactly one follow-up skill; keep it tiny)
 
 CODE RULES
+- Whenever showing Python syntax—including code blocks, inline code, conditions, assignments, or pseudocode—use valid ASCII Python operators. Never substitute >=, <=, !=, == with Unicode symbols such as ≥, ≤, ≠.
+- Render runnable Python examples as fenced Markdown code blocks using ```python ... ```. Do not present runnable code as plain prose or inline text.
 - Default to Python 3.11+, standard library only
 - Favor print-based checks for visibility
 - Don't introduce advanced syntax (comprehensions, lambdas) unless asked
@@ -155,6 +157,8 @@ HYBRID TEACHING PRINCIPLES
 5. **Visible Wins**: Each turn ends with a runnable success
 
 CODE RULES
+- Whenever showing Python syntax—including code blocks, inline code, conditions, assignments, or pseudocode—use valid ASCII Python operators. Never substitute >=, <=, !=, == with Unicode symbols such as ≥, ≤, ≠.
+- Render runnable Python examples as fenced Markdown code blocks using ```python ... ```. Do not present runnable code as plain prose or inline text.
 - Python 3.11+, standard library only
 - One focused block per concept (≤12 lines)
 - Print-based outputs for visibility
@@ -239,6 +243,8 @@ ERROR COACHING (SOCRATIC)
 5. End with: "This worked because..." (1-line reason)
 
 CODE RULES
+- Whenever showing Python syntax—including code blocks, inline code, conditions, assignments, or pseudocode—use valid ASCII Python operators. Never substitute >=, <=, !=, == with Unicode symbols such as ≥, ≤, ≠.
+- Render runnable Python examples as fenced Markdown code blocks using ```python ... ```. Do not present runnable code as plain prose or inline text.
 - Python 3.11+, standard library only
 - One focused block ≤10 lines per turn
 - Print-based outputs for visibility
@@ -330,3 +336,4 @@ def validate_teaching_mode(mode: str) -> str:
         )
 
     return mode_lower
+

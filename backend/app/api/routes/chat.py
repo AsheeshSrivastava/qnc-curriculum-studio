@@ -34,6 +34,19 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+def _normalize_python_operators(text: str) -> str:
+    replacements = {
+        "≥": ">=",
+        "≤": "<=",
+        "≠": "!=",
+    }
+
+    for unicode_operator, ascii_operator in replacements.items():
+        text = text.replace(unicode_operator, ascii_operator)
+
+    return text
+
+
 def _format_response(state: GraphState) -> ChatResponse:
     try:
         evaluation_raw = state.get("evaluation") or state.get("compiler_evaluation") or {}
@@ -46,6 +59,8 @@ def _format_response(state: GraphState) -> ChatResponse:
             or state.get("compiled_answer")  # ← Agent 3 output (fallback)
             or state.get("answer", "")       # ← Raw answer (final fallback)
         )
+
+        answer = _normalize_python_operators(answer)
         
         # Handle different evaluation formats
         # Compiler evaluator returns: {technical_preservation, psw_structure, ...}
@@ -385,7 +400,7 @@ Please answer the question using the provided sources. Be concise and practical.
             teaching_mode=request.teaching_mode,
         )
         response = await llm.ainvoke(messages)
-        answer = response.content
+        answer = _normalize_python_operators(response.content)
 
         sources_in_prompt = len(rag_prompt_docs) + len(web_results)
 
